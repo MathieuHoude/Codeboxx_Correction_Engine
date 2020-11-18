@@ -75,22 +75,16 @@ func docker(githubHandle string) {
 
 	tar := new(archivex.TarFile)
 	tar.Create("/tmp/rubyResidentialControllerGrading.tar")
-	tar.AddAll("contrib", true)
-	tar.AddAll("src", true)
-	tar.AddAll("test", true)
-	tar.AddAll("s2i", true)
-	tar.AddAll("help", true)
-	tar.AddAll("image", true)
-	tar.AddAll("licenses", true)
+	tar.AddAll("rubyResidentialControllerGrading", true)
 	tar.Close()
 
-	dockerBuildContext, err := os.Open("./rubyResidentialControllerGrading/")
+	dockerBuildContext, err := os.Open("/tmp/rubyResidentialControllerGrading.tar")
 	defer dockerBuildContext.Close()
 
 	keys := getKeys()
 
 	buildOptions := types.ImageBuildOptions{
-		Dockerfile: "Dockerfile", // optional, is the default
+		Dockerfile: "rubyResidentialControllerGrading/Dockerfile", // optional, is the default
 		BuildArgs: map[string]*string{
 			"PUBLICKEY":  keys.PublicKey,
 			"PRIVATEKEY": keys.PrivateKey,
@@ -109,7 +103,7 @@ func docker(githubHandle string) {
 		Image: imageName,
 		Cmd:   []string{"/usr/bin/correction-script.sh"},
 		Tty:   false,
-		Env:   []string{"GITHUBHANDLE" + githubHandle},
+		Env:   []string{"GITHUBHANDLE=" + githubHandle},
 	}, nil, nil, nil, "")
 	if err != nil {
 		panic(err)
@@ -132,6 +126,7 @@ func docker(githubHandle string) {
 	if err != nil {
 		panic(err)
 	}
+
 
 	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
 

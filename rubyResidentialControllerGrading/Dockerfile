@@ -1,5 +1,4 @@
 FROM ruby:2.5
-# ARG githubHandle
 ARG ssh_prv_key
 ARG ssh_pub_key
 
@@ -25,6 +24,11 @@ RUN bundle install
 COPY . /gradingApp
 COPY correction-script.sh /usr/bin/
 RUN chmod +x /usr/bin/correction-script.sh
+
+RUN mkdir lib
+RUN mkdir spec
+RUN mv spec_helper.rb spec
+RUN mv residential_controller_spec.rb spec
 
 # # Add a script to be executed every time the container starts.
 # COPY entrypoint.sh /usr/bin/
