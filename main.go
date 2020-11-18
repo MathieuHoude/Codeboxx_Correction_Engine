@@ -1,104 +1,23 @@
 package main
 
 import (
-	"archive/tar"
-	"bytes"
-	"context"
+	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
+	"os/exec"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	"github.com/gorilla/mux"
 )
 
-func buildImage(client *client.Client, tags []string, dockerfile string) error {
-	ctx := context.Background()
-
-	// Create a buffer
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-	defer tw.Close()
-
-	// Create a filereader
-	dockerFileReader, err := os.Open(dockerfile)
-	if err != nil {
-		return err
-	}
-
-	// Read the actual Dockerfile
-	readDockerFile, err := ioutil.ReadAll(dockerFileReader)
-	if err != nil {
-		return err
-	}
-
-	// Make a TAR header for the file
-	tarHeader := &tar.Header{
-		Name: dockerfile,
-		Size: int64(len(readDockerFile)),
-	}
-
-	// Writes the header described for the TAR file
-	err = tw.WriteHeader(tarHeader)
-	if err != nil {
-		return err
-	}
-
-	// Writes the dockerfile data to the TAR file
-	_, err = tw.Write(readDockerFile)
-	if err != nil {
-		return err
-	}
-
-	dockerFileTarReader := bytes.NewReader(buf.Bytes())
-
-	// Define the build options to use for the file
-	// https://godoc.org/github.com/docker/docker/api/types#ImageBuildOptions
-	buildOptions := types.ImageBuildOptions{
-		Context:    dockerFileTarReader,
-		Dockerfile: dockerfile,
-		Remove:     true,
-		Tags:       tags,
-	}
-
-	// Build the actual image
-	imageBuildResponse, err := client.ImageBuild(
-		ctx,
-		dockerFileTarReader,
-		buildOptions,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	// Read the STDOUT from the build process
-	defer imageBuildResponse.Body.Close()
-	_, err = io.Copy(os.Stdout, imageBuildResponse.Body)
-	if err != nil {
-		return err
-	}
-
-	return nil
+// GradingRequest contains the necessary elements to grade a project
+type GradingRequest struct {
+	GithubHandle string
 }
 
-func docker(image string, dockerfile string) {
-	client, err := client.NewEnvClient()
-	if err != nil {
-		log.Fatalf("Unable to create docker client: %s", err)
-	}
-
-	// Client, imagename and Dockerfile location
-	tags := []string{image}
-	// dockerfile := "Dockerfile"
-	err = buildImage(client, tags, dockerfile)
-	if err != nil {
-		log.Println(err)
-	}
+//GradingResponse contains the informations to send back to the requester
+type GradingResponse struct {
+	testResults map[string]interface{}
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
@@ -106,18 +25,126 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: homePage")
 }
 
+func dockerComposeBuild(githubHandle string) {
+
+	cmd := exec.Command("docker-compose", "-f", "./rubyResidentialControllerGrading/docker-compose.yml", "--project-directory", "./rubyResidentialControllerGrading", "build", "--build-arg", "githubHandle="+githubHandle)
+	stdout, err := cmd.Output()
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Println(string(stdout))
+}
+
+func dockerComposeUp() {
+	cmd := exec.Command("docker-compose", "-f", "./rubyResidentialControllerGrading/docker-compose.yml", "--project-directory", "./rubyResidentialControllerGrading", "up")
+	stdout, err := cmd.Output()
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Println(string(stdout))
+}
+
+func dockerComposeDown() {
+	cmd := exec.Command("docker-compose", "-f", "./rubyResidentialControllerGrading/docker-compose.yml", "--project-directory", "./rubyResidentialControllerGrading", "down")
+	stdout, err := cmd.Output()
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Println(string(stdout))
+}
+
+func dockerRun() []byte {
+	cmd := exec.Command("docker", "run", "ruby-residential-controller-grading")
+	stdout, err := cmd.Output()
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil
+	}
+	fmt.Println(string(stdout))
+
+	return stdout
+}
+
 func rubyResidentialControllerCorrection(w http.ResponseWriter, r *http.Request) {
-	docker("ruby", "rubyResidentialController/Dockerfile")
+	var request GradingRequest
+	err := decodeJSONBody(w, r, &request)
+	if err != nil {
+		var mr *malformedRequest
+		if errors.As(err, &mr) {
+			http.Error(w, mr.msg, mr.status)
+		} else {
+			log.Println(err.Error())
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		return
+	}
+	dockerComposeBuild(request.GithubHandle)
+	dockerComposeUp()
+
+	cmd := exec.Command("docker", "logs", "-f", " $(docker-compose ps -q)")
+	stdout, err := cmd.Output()
+	fmt.Println(string(stdout))
+	// var raw map[string]interface{}
+	// if err := json.Unmarshal(testResults, &raw); err != nil {
+	// 	panic(err)
+	// }
+
+	// response := GradingResponse{
+	// 	testResults: raw,
+	// }
+
+	// fmt.Printf("%+v\n", response)
+
+	// jsonData, err := json.Marshal(response)
+
+	// w.Header().Set("Content-Type", "application/json")
+	// // w.WriteHeader(http.StatusCreated)
+	// json.NewEncoder(w).Encode(response)
+
 }
 
 func handleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	myRouter.HandleFunc("/", homePage)
 	myRouter.HandleFunc("/rubyresidentialcontroller", rubyResidentialControllerCorrection)
-
+	log.Println("Starting server on :10000...")
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }
 
 func main() {
-	handleRequests()
+	loadEnv()
+	// handleRequests()
+
+	docker("MathieuHoude")
+
+	// dockerComposeBuild("MathieuHoude")
+	// dockerComposeUp()
+
+	// cmd := exec.Command("bash", "-c", "set 'docker-compose ps -q';", "docker", "logs", "-f", "'$($*)'")
+	// stdout, err := cmd.Output()
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	return
+	// }
+	// fmt.Println(string(stdout))
+
+	// test := string(testResults)
+	// string test2 = test.Subtring(test.IndexOf('|') + 1)
+	// log.Println(test)
+
+	// var raw map[string]interface{}
+	// if err := json.Unmarshal(testResults, &raw); err != nil {
+	// 	panic(err)
+	// }
+
+	// response := GradingResponse{
+	// 	testResults: raw,
+	// }
 }

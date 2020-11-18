@@ -4,11 +4,6 @@ services:
     build: 
       context: .
       args:
-        - githubHandle=MathieuHoude
         - ssh_prv_key=${PRIVATEKEY}
         - ssh_pub_key=${PUBLICKEY}
-    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
-    volumes:
-      - .:/gradingApp
-    ports:
-      - "3000:3000"
+    command: /usr/bin/correction-script.sh
