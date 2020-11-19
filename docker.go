@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -34,6 +37,34 @@ func getDockerAuthenticationString() string {
 	return authStr
 }
 
+func getKeys() SSHKeys {
+	publicKey := os.Getenv("PUBLICKEY")
+	// privateKey := os.Getenv("PRIVATEKEY")
+
+	cmd := exec.Command("whoami")
+	stdout, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	username := string(stdout)
+	username = strings.TrimSuffix(username, "\n")
+
+	cmd1 := exec.Command("cat", "/home/"+username+"/.ssh/id_rsa")
+	stdout1, err := cmd1.Output()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	privateKey := string(stdout1)
+
+	keys := SSHKeys{
+		PublicKey:  &publicKey,
+		PrivateKey: &privateKey,
+	}
+
+	return keys
+
+}
+
 func pullDockerImage(ctx context.Context, cli *client.Client, imageName string) {
 	authStr := getDockerAuthenticationString()
 
@@ -44,35 +75,7 @@ func pullDockerImage(ctx context.Context, cli *client.Client, imageName string) 
 	io.Copy(os.Stdout, reader)
 }
 
-func getKeys() SSHKeys {
-
-	var publicKeyPointer *string
-	var privateKeyPointer *string
-	publicKey := os.Getenv("PUBLICKEY")
-	privateKey := os.Getenv("PRIVATEKEY")
-	publicKeyPointer = &publicKey
-	privateKeyPointer = &privateKey
-
-	keys := SSHKeys{
-		PublicKey:  publicKeyPointer,
-		PrivateKey: privateKeyPointer,
-	}
-
-	return keys
-
-}
-
-func docker(githubHandle string) {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		panic(err)
-	}
-
-	// imageName := "mathieuhoude/ruby-residential-controller-grading:1.1"
-	// pullDockerImage(ctx, cli, imageName)
-	imageName := "ruby-residential-controller-grading"
-
+func dockerBuild(cli *client.Client, imageName string) {
 	tar := new(archivex.TarFile)
 	tar.Create("/tmp/rubyResidentialControllerGrading.tar")
 	tar.AddAll("rubyResidentialControllerGrading", true)
@@ -84,26 +87,45 @@ func docker(githubHandle string) {
 	keys := getKeys()
 
 	buildOptions := types.ImageBuildOptions{
-		Dockerfile: "rubyResidentialControllerGrading/Dockerfile", // optional, is the default
+		Dockerfile: "rubyResidentialControllerGrading/Dockerfile",
+		Tags:       []string{imageName + ":local"},
 		BuildArgs: map[string]*string{
-			"PUBLICKEY":  keys.PublicKey,
-			"PRIVATEKEY": keys.PrivateKey,
+			"ssh_pub_key": keys.PublicKey,
+			"ssh_prv_key": keys.PrivateKey,
 		},
 	}
+
 	buildResponse, err := cli.ImageBuild(context.Background(), dockerBuildContext, buildOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	//time.Sleep(time.Second * 3)
+
 	defer buildResponse.Body.Close()
 
-	// test := []string{"PUBLICKEY=" + os.Getenv("PUBLICKEY"), "PRIVATEKEY=" + os.Getenv("PRIVATEKEY"), "GITHUBHANDLE" + githubHandle}
-	// test2 := strings.Split(test, "\n")
+	_, err = io.Copy(os.Stdout, buildResponse.Body)
+
+	deleteFile("/tmp/rubyResidentialControllerGrading.tar")
+}
+
+func docker(imageName string, githubHandle string) {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		panic(err)
+	}
+
+	pullDockerImage(ctx, cli, imageName)
+
+	dockerBuild(cli, imageName)
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: imageName,
-		Cmd:   []string{"/usr/bin/correction-script.sh"},
-		Tty:   false,
-		Env:   []string{"GITHUBHANDLE=" + githubHandle},
+		Image: imageName + ":local",
+		// Image: imageName + ":test",
+		Cmd: []string{"/usr/bin/correction-script.sh"},
+		Tty: false,
+		Env: []string{"GITHUBHANDLE=" + githubHandle},
 	}, nil, nil, nil, "")
 	if err != nil {
 		panic(err)
@@ -126,7 +148,6 @@ func docker(githubHandle string) {
 	if err != nil {
 		panic(err)
 	}
-
 
 	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
 

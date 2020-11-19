@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/golang/gddo/httputil/header"
@@ -85,5 +86,12 @@ func loadEnv() {
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("Error loading .env file")
+	}
+}
+
+func deleteFile(filePath string) {
+	err := os.Remove(filePath) // remove a single file
+	if err != nil {
+		fmt.Println(err)
 	}
 }
