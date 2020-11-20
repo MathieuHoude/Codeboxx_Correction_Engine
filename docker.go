@@ -18,12 +18,6 @@ import (
 	"github.com/jhoonb/archivex"
 )
 
-//SSHKeys contains the pointers to the ssh keys
-type SSHKeys struct {
-	PublicKey  *string
-	PrivateKey *string
-}
-
 func getDockerAuthenticationString() string {
 	authConfig := types.AuthConfig{
 		Username: os.Getenv("DOCKERUSERNAME"),
@@ -35,34 +29,6 @@ func getDockerAuthenticationString() string {
 	}
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 	return authStr
-}
-
-func getKeys() SSHKeys {
-	publicKey := os.Getenv("PUBLICKEY")
-	// privateKey := os.Getenv("PRIVATEKEY")
-
-	cmd := exec.Command("whoami")
-	stdout, err := cmd.Output()
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	username := string(stdout)
-	username = strings.TrimSuffix(username, "\n")
-
-	cmd1 := exec.Command("cat", "/home/"+username+"/.ssh/id_rsa")
-	stdout1, err := cmd1.Output()
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	privateKey := string(stdout1)
-
-	keys := SSHKeys{
-		PublicKey:  &publicKey,
-		PrivateKey: &privateKey,
-	}
-
-	return keys
-
 }
 
 func pullDockerImage(ctx context.Context, cli *client.Client, imageName string) {

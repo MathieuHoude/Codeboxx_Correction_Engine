@@ -73,7 +73,7 @@ func dockerRun() []byte {
 }
 
 func rubyResidentialControllerCorrection(w http.ResponseWriter, r *http.Request) {
-	imageName := "mathieuhoude/ruby-residential-controller-grading:1.3"
+	imageName := "mathieuhoude/ruby-residential-controller-grading"
 	var request GradingRequest
 	err := decodeJSONBody(w, r, &request)
 	if err != nil {
@@ -113,31 +113,5 @@ func handleRequests() {
 func main() {
 
 	loadEnv()
-	// handleRequests()
-	imageName := "mathieuhoude/ruby-residential-controller-grading"
-	docker(imageName, "MathieuHoude")
-
-	// dockerComposeBuild("MathieuHoude")
-	// dockerComposeUp()
-
-	// cmd := exec.Command("bash", "-c", "set 'docker-compose ps -q';", "docker", "logs", "-f", "'$($*)'")
-	// stdout, err := cmd.Output()
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// 	return
-	// }
-	// fmt.Println(string(stdout))
-
-	// test := string(testResults)
-	// string test2 = test.Subtring(test.IndexOf('|') + 1)
-	// log.Println(test)
-
-	// var raw map[string]interface{}
-	// if err := json.Unmarshal(testResults, &raw); err != nil {
-	// 	panic(err)
-	// }
-
-	// response := GradingResponse{
-	// 	testResults: raw,
-	// }
+	handleRequests()
 }
