@@ -105,7 +105,7 @@ func rubyResidentialControllerCorrection(w http.ResponseWriter, r *http.Request)
 func handleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	myRouter.HandleFunc("/", homePage)
-	myRouter.HandleFunc("/rubyresidentialcontroller", rubyResidentialControllerCorrection)
+	myRouter.HandleFunc("/rubyresidentialcontroller", rubyResidentialControllerCorrection).Methods("POST")
 	log.Println("Starting server on :10000...")
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
 }
