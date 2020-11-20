@@ -1,9 +1,0 @@
-version: "3.8"
-services:
-  web:
-    build: 
-      context: .
-      args:
-        - ssh_prv_key=${PRIVATEKEY}
-        - ssh_pub_key=${PUBLICKEY}
-    command: /usr/bin/correction-script.sh
