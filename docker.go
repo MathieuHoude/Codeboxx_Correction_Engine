@@ -5,13 +5,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/jhoonb/archivex"
 )
 
@@ -72,7 +73,7 @@ func dockerBuild(cli *client.Client, imageName string) {
 	deleteFile("/tmp/rubyResidentialControllerGrading.tar")
 }
 
-func docker(imageName string, githubHandle string) {
+func docker(imageName string, githubHandle string) RspecResults {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -107,11 +108,22 @@ func docker(imageName string, githubHandle string) {
 	case <-statusCh:
 	}
 
-	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
+	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true, Follow: true})
 	if err != nil {
 		panic(err)
 	}
 
-	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+	defer out.Close()
 
+	//read the first 8 bytes to ignore the HEADER part from docker container logs
+	p := make([]byte, 8)
+	out.Read(p)
+	content, _ := ioutil.ReadAll(out)
+
+	var rspecResults RspecResults
+	if err := json.NewDecoder(strings.NewReader(string(content))).Decode(&rspecResults); err != nil {
+		panic(err)
+	}
+
+	return rspecResults
 }

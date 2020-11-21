@@ -1,11 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"os/exec"
 
 	"github.com/gorilla/mux"
 )
@@ -17,59 +17,35 @@ type GradingRequest struct {
 
 //GradingResponse contains the informations to send back to the requester
 type GradingResponse struct {
-	testResults map[string]interface{}
+	testResults string
+}
+
+//RspecResults represents the data returned by Rspec
+type RspecResults struct {
+	Version  string `json:"version"`
+	Examples []struct {
+		ID              string      `json:"id"`
+		Description     string      `json:"description"`
+		FullDescription string      `json:"full_description"`
+		Status          string      `json:"status"`
+		FilePath        string      `json:"file_path"`
+		LineNumber      int         `json:"line_number"`
+		RunTime         float64     `json:"run_time"`
+		PendingMessage  interface{} `json:"pending_message"`
+	} `json:"examples"`
+	Summary struct {
+		Duration                     float64 `json:"duration"`
+		ExampleCount                 int     `json:"example_count"`
+		FailureCount                 int     `json:"failure_count"`
+		PendingCount                 int     `json:"pending_count"`
+		ErrorsOutsideOfExamplesCount int     `json:"errors_outside_of_examples_count"`
+	} `json:"summary"`
+	SummaryLine string `json:"summary_line"`
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "This is the Codeboxx Grading API")
 	fmt.Println("Endpoint Hit: homePage")
-}
-
-func dockerComposeBuild(githubHandle string) {
-
-	cmd := exec.Command("docker-compose", "-f", "./rubyResidentialControllerGrading/docker-compose.yml", "--project-directory", "./rubyResidentialControllerGrading", "build", "--build-arg", "githubHandle="+githubHandle)
-	stdout, err := cmd.Output()
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	fmt.Println(string(stdout))
-}
-
-func dockerComposeUp() {
-	cmd := exec.Command("docker-compose", "-f", "./rubyResidentialControllerGrading/docker-compose.yml", "--project-directory", "./rubyResidentialControllerGrading", "up")
-	stdout, err := cmd.Output()
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	fmt.Println(string(stdout))
-}
-
-func dockerComposeDown() {
-	cmd := exec.Command("docker-compose", "-f", "./rubyResidentialControllerGrading/docker-compose.yml", "--project-directory", "./rubyResidentialControllerGrading", "down")
-	stdout, err := cmd.Output()
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	fmt.Println(string(stdout))
-}
-
-func dockerRun() []byte {
-	cmd := exec.Command("docker", "run", "ruby-residential-controller-grading")
-	stdout, err := cmd.Output()
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return nil
-	}
-	fmt.Println(string(stdout))
-
-	return stdout
 }
 
 func rubyResidentialControllerCorrection(w http.ResponseWriter, r *http.Request) {
@@ -86,19 +62,13 @@ func rubyResidentialControllerCorrection(w http.ResponseWriter, r *http.Request)
 		}
 		return
 	}
-	docker(imageName, request.GithubHandle)
+	testResults := docker(imageName, request.GithubHandle)
 
-	// response := GradingResponse{
-	// 	testResults: raw,
-	// }
+	jsonData, err := json.Marshal(testResults)
 
-	// fmt.Printf("%+v\n", response)
-
-	// jsonData, err := json.Marshal(response)
-
-	// w.Header().Set("Content-Type", "application/json")
-	// // w.WriteHeader(http.StatusCreated)
-	// json.NewEncoder(w).Encode(response)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(jsonData)
 
 }
 
