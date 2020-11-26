@@ -17,30 +17,8 @@ type GradingRequest struct {
 
 //GradingResponse contains the informations to send back to the requester
 type GradingResponse struct {
-	testResults string
-}
-
-//RspecResults represents the data returned by Rspec
-type RspecResults struct {
-	Version  string `json:"version"`
-	Examples []struct {
-		ID              string      `json:"id"`
-		Description     string      `json:"description"`
-		FullDescription string      `json:"full_description"`
-		Status          string      `json:"status"`
-		FilePath        string      `json:"file_path"`
-		LineNumber      int         `json:"line_number"`
-		RunTime         float64     `json:"run_time"`
-		PendingMessage  interface{} `json:"pending_message"`
-	} `json:"examples"`
-	Summary struct {
-		Duration                     float64 `json:"duration"`
-		ExampleCount                 int     `json:"example_count"`
-		FailureCount                 int     `json:"failure_count"`
-		PendingCount                 int     `json:"pending_count"`
-		ErrorsOutsideOfExamplesCount int     `json:"errors_outside_of_examples_count"`
-	} `json:"summary"`
-	SummaryLine string `json:"summary_line"`
+	TestResults RspecResults
+	Issues      CodeClimateIssues
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
@@ -63,8 +41,13 @@ func rubyResidentialControllerCorrection(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	testResults := docker(imageName, request.GithubHandle)
+	issues := codeClimate(request.GithubHandle, "Rocket_Elevators_Controllers")
 
-	jsonData, err := json.Marshal(testResults)
+	gradingResponse := GradingResponse{TestResults: testResults, Issues: issues}
+
+	jsonData, err := json.Marshal(gradingResponse)
+
+	fmt.Println(string(jsonData))
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -81,7 +64,6 @@ func handleRequests() {
 }
 
 func main() {
-
 	loadEnv()
 	handleRequests()
 }
