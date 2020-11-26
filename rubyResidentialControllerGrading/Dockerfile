@@ -9,3 +9,6 @@ RUN echo "$ssh_prv_key" > /root/.ssh/id_rsa && \
 
 # Start the main process.
 CMD /usr/bin/correction-script.sh
+
+
+

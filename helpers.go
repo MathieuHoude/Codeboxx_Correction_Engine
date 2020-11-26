@@ -134,3 +134,15 @@ func deleteFile(filePath string) {
 		fmt.Println(err)
 	}
 }
+
+func failOnError(err error, msg string) {
+	if err != nil {
+		log.Fatalf("%s: %s", msg, err)
+	}
+}
+
+func startWorkers(workerAmount int) {
+	for i := 1; i <= workerAmount; i++ {
+		go worker(i)
+	}
+}

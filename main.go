@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -12,7 +11,9 @@ import (
 
 // GradingRequest contains the necessary elements to grade a project
 type GradingRequest struct {
-	GithubHandle string
+	GithubHandle  string
+	RepositoryURL string
+	ProjectName   string
 }
 
 //GradingResponse contains the informations to send back to the requester
@@ -26,8 +27,16 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: homePage")
 }
 
-func rubyResidentialControllerCorrection(w http.ResponseWriter, r *http.Request) {
-	imageName := "mathieuhoude/ruby-residential-controller-grading"
+func handleRequests() {
+	myRouter := mux.NewRouter().StrictSlash(true)
+	myRouter.HandleFunc("/", homePage)
+	// myRouter.HandleFunc("/ruby-residential-controller", rubyResidentialControllerCorrection).Methods("POST")
+	myRouter.HandleFunc("/gradingrequest", newGradingRequest).Methods("POST")
+	log.Println("Starting server on :10000...")
+	log.Fatal(http.ListenAndServe(":10000", myRouter))
+}
+
+func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 	var request GradingRequest
 	err := decodeJSONBody(w, r, &request)
 	if err != nil {
@@ -40,30 +49,13 @@ func rubyResidentialControllerCorrection(w http.ResponseWriter, r *http.Request)
 		}
 		return
 	}
-	testResults := docker(imageName, request.GithubHandle)
-	issues := codeClimate(request.GithubHandle, "Rocket_Elevators_Controllers")
-
-	gradingResponse := GradingResponse{TestResults: testResults, Issues: issues}
-
-	jsonData, err := json.Marshal(gradingResponse)
-
-	fmt.Println(string(jsonData))
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(jsonData)
-
-}
-
-func handleRequests() {
-	myRouter := mux.NewRouter().StrictSlash(true)
-	myRouter.HandleFunc("/", homePage)
-	myRouter.HandleFunc("/rubyresidentialcontroller", rubyResidentialControllerCorrection).Methods("POST")
-	log.Println("Starting server on :10000...")
-	log.Fatal(http.ListenAndServe(":10000", myRouter))
+	newTask(request)
+	fmt.Fprintf(w, "The request has been received")
+	fmt.Println("Endpoint Hit: gradingrequest")
 }
 
 func main() {
 	loadEnv()
+	startWorkers(3)
 	handleRequests()
 }
