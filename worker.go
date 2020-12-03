@@ -57,10 +57,8 @@ func worker(workerID int) {
 			log.Printf(" [x] New grading request for worker #"+fmt.Sprint(workerID)+": %s", gradingRequest.ProjectName)
 
 			gradingResponse := startGrading(gradingRequest)
-			jsonData, err := json.Marshal(gradingResponse)
-			failOnError(err, "Failed to parse struct to JSON")
-
-			fmt.Println(string(jsonData))
+			updateJobStatus(gradingRequest.JobID, "Completed")
+			sendBackResults(gradingResponse)
 		}
 	}()
 

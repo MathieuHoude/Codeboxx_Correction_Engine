@@ -37,5 +37,8 @@ func newTask(gradingRequest GradingRequest) {
 			Body:         []byte(body),
 		})
 	failOnError(err, "Failed to publish a message")
+	if err == nil {
+		updateJobStatus(gradingRequest.JobID, "Queued")
+	}
 	log.Printf(" [x] Sent %s", body)
 }

@@ -11,15 +11,21 @@ import (
 
 // GradingRequest contains the necessary elements to grade a project
 type GradingRequest struct {
-	GithubHandle  string
-	RepositoryURL string
-	ProjectName   string
+	JobID             int    `json:"JobID"`
+	DeliverableID     int    `json:"DeliverableID"`
+	DeliverableScores []int  `json:"DeliverableScores"`
+	GithubHandle      string `json:"GithubHandle"`
+	RepositoryURL     string `json:"RepositoryURL"`
+	ProjectName       string `json:"ProjectName"`
+	DockerImageName   string `json:"DockerImageName"`
 }
 
 //GradingResponse contains the informations to send back to the requester
 type GradingResponse struct {
-	TestResults RspecResults
-	Issues      CodeClimateIssues
+	JobID             int
+	DeliverableID     int
+	DeliverableScores DeliverableScores
+	Issues            CodeClimateIssues
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
@@ -49,6 +55,7 @@ func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	updateJobStatus(request.JobID, "Received")
 	newTask(request)
 	fmt.Fprintf(w, "The request has been received")
 	fmt.Println("Endpoint Hit: gradingrequest")
@@ -56,6 +63,6 @@ func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	loadEnv()
-	startWorkers(3)
-	handleRequests()
+	startWorkers(3)  //Starts the workers that will receive tasks from the task_queue. Specify the number of workers needed.
+	handleRequests() //Start the API to accept and dispatch new grading requests
 }

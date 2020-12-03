@@ -73,28 +73,29 @@ func dockerBuild(cli *client.Client, imageName string) {
 	deleteFile("/tmp/rubyResidentialControllerGrading.tar")
 }
 
-func docker(imageName string, githubHandle string) RspecResults {
+func docker(gradingRequest GradingRequest) RspecResults {
+	updateJobStatus(gradingRequest.JobID, "Building")
+
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
 	}
-
-	pullDockerImage(ctx, cli, imageName)
-
-	dockerBuild(cli, imageName)
+	pullDockerImage(ctx, cli, gradingRequest.DockerImageName)
+	dockerBuild(cli, gradingRequest.DockerImageName)
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: imageName + ":local",
+		Image: gradingRequest.DockerImageName + ":local",
 		// Image: imageName + ":test",
 		Cmd: []string{"/usr/bin/correction-script.sh"},
 		Tty: false,
-		Env: []string{"GITHUBHANDLE=" + githubHandle},
+		Env: []string{"GITHUBHANDLE=" + gradingRequest.GithubHandle},
 	}, nil, nil, nil, "")
 	if err != nil {
 		panic(err)
 	}
 
+	updateJobStatus(gradingRequest.JobID, "Grading")
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		panic(err)
 	}
