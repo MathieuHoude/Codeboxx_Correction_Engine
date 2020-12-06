@@ -6,15 +6,29 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 )
 
-//DeliverableScores contains the list of scores for a given deliverable
-type DeliverableScores struct {
-	DeliverableID     int
-	DeliverableScores []struct {
-		ID   int
-		Pass bool
+//DeliverableScore represents a deliverable criteria
+type DeliverableScore struct {
+	ID                int
+	ScoreCardItemName string
+	Pass              bool
+}
+
+func buildDeliverableScores(content []byte, gradingRequest GradingRequest) []DeliverableScore {
+	deliverableScores := gradingRequest.DeliverableScores
+
+	switch gradingRequest.TestingTool {
+	case "Rspec":
+		var rspecResults RspecResults
+		if err := json.NewDecoder(strings.NewReader(string(content))).Decode(&rspecResults); err != nil {
+			panic(err)
+		}
+		deliverableScores = buildDeliverableScoresFromRspec(rspecResults, deliverableScores)
+
 	}
+	return deliverableScores
 }
 
 func sendBackResults(gradingResponse GradingResponse) {
@@ -31,7 +45,7 @@ func sendBackResults(gradingResponse GradingResponse) {
 }
 
 func updateJobStatus(jobID int, newStatus string) {
-	jsonData := []byte(`{"JobID": "` + fmt.Sprint(jobID) + `", NewStatus: "` + newStatus + `"}`)
+	jsonData := []byte(`{"GradingJobsID": "` + fmt.Sprint(jobID) + `", Results: "` + newStatus + `"}`)
 	request, _ := http.NewRequest("POST", os.Getenv("JOBUPDATEENDPOINT"), bytes.NewBuffer(jsonData))
 	request.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
@@ -42,28 +56,27 @@ func updateJobStatus(jobID int, newStatus string) {
 }
 
 func startGrading(gradingRequest GradingRequest) GradingResponse {
-	var gradingResponse GradingResponse
-	switch gradingRequest.ProjectName {
-	case "ruby-residential-controller":
-		gradingResponse = rubyResidentialControllerCorrection(gradingRequest)
+	deliverableScores := docker(gradingRequest)
+	issues := codeClimate(gradingRequest.RepositoryURL)
+
+	gradingResponse := GradingResponse{JobID: gradingRequest.JobID, DeliverableScores: deliverableScores, Issues: issues}
+
+	return gradingResponse
+
+}
+
+func buildDeliverableScoresFromRspec(testResults RspecResults, deliverablesScores []DeliverableScore) []DeliverableScore {
+
+	for _, testResult := range testResults.Examples {
+		for _, deliverableScore := range deliverablesScores {
+			if testResult.Description == deliverableScore.ScoreCardItemName {
+				if testResult.Status == "passed" {
+					deliverableScore.Pass = false
+				}
+				break
+			}
+		}
 
 	}
-	return gradingResponse
-
-}
-
-func buildDeliverableScoresFromRspec(testResults RspecResults) DeliverableScores {
-	var scores DeliverableScores
-	return scores
-}
-
-func rubyResidentialControllerCorrection(gradingRequest GradingRequest) GradingResponse {
-	testResults := docker(gradingRequest)
-	issues := codeClimate(gradingRequest.GithubHandle, "Rocket_Elevators_Controllers")
-
-	scores := buildDeliverableScoresFromRspec(testResults)
-
-	gradingResponse := GradingResponse{JobID: gradingRequest.JobID, DeliverableScores: scores, Issues: issues}
-
-	return gradingResponse
+	return deliverablesScores
 }

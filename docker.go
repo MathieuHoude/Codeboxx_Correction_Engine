@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -73,7 +72,7 @@ func dockerBuild(cli *client.Client, imageName string) {
 	deleteFile("/tmp/rubyResidentialControllerGrading.tar")
 }
 
-func docker(gradingRequest GradingRequest) RspecResults {
+func docker(gradingRequest GradingRequest) []DeliverableScore {
 	updateJobStatus(gradingRequest.JobID, "Building")
 
 	ctx := context.Background()
@@ -121,10 +120,7 @@ func docker(gradingRequest GradingRequest) RspecResults {
 	out.Read(p)
 	content, _ := ioutil.ReadAll(out)
 
-	var rspecResults RspecResults
-	if err := json.NewDecoder(strings.NewReader(string(content))).Decode(&rspecResults); err != nil {
-		panic(err)
-	}
+	deliverableScores := buildDeliverableScores(content, gradingRequest)
 
-	return rspecResults
+	return deliverableScores
 }

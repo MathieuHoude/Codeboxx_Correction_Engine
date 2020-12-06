@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -54,6 +55,7 @@ func addPublicRepository(githubSlug string) AddPublicRepositoryResponse {
 	return jsonResponseBody
 }
 
+//Needs refactoring
 func getRepository(githubSlug string) GetRepositoryResponse {
 	var jsonResponseBody GetRepositoryResponse
 	for jsonResponseBody.Data == nil || jsonResponseBody.Data[0].Relationships.LatestDefaultBranchSnapshot.Data.ID == "" {
@@ -70,7 +72,9 @@ func getRepository(githubSlug string) GetRepositoryResponse {
 	return jsonResponseBody
 }
 
-func getIssues(repoID, snapshotID string) CodeClimateIssues {
+func getIssues(getRepositoryResponse GetRepositoryResponse) CodeClimateIssues {
+	repoID := getRepositoryResponse.Data[0].ID
+	snapshotID := getRepositoryResponse.Data[0].Relationships.LatestDefaultBranchSnapshot.Data.ID
 	var codeClimateIssues CodeClimateIssues
 	response, err := http.Get("https://api.codeclimate.com/v1/repos/" + repoID + "/snapshots/" + snapshotID + "/issues")
 
@@ -85,10 +89,10 @@ func getIssues(repoID, snapshotID string) CodeClimateIssues {
 	return codeClimateIssues
 }
 
-func codeClimate(githubHandle, projectName string) CodeClimateIssues {
-	githubSlug := githubHandle + "/" + projectName
+func codeClimate(repositoryURL string) CodeClimateIssues {
+	githubSlug := strings.Replace(repositoryURL[strings.LastIndex(repositoryURL, ":")+1:], ".git", "", -1)
 	addPublicRepository(githubSlug)
 	getRepositoryResponse := getRepository(githubSlug)
-	codeClimateIssues := getIssues(getRepositoryResponse.Data[0].ID, getRepositoryResponse.Data[0].Relationships.LatestDefaultBranchSnapshot.Data.ID)
+	codeClimateIssues := getIssues(getRepositoryResponse)
 	return codeClimateIssues
 }

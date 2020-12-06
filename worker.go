@@ -54,7 +54,7 @@ func worker(workerID int) {
 			if err != nil {
 				log.Println(err)
 			}
-			log.Printf(" [x] New grading request for worker #"+fmt.Sprint(workerID)+": %s", gradingRequest.ProjectName)
+			log.Printf(" [x] New grading request for worker #"+fmt.Sprint(workerID)+": %s", gradingRequest.RepositoryURL)
 
 			gradingResponse := startGrading(gradingRequest)
 			updateJobStatus(gradingRequest.JobID, "Completed")
