@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -89,8 +88,7 @@ func getIssues(getRepositoryResponse GetRepositoryResponse) CodeClimateIssues {
 	return codeClimateIssues
 }
 
-func codeClimate(repositoryURL string) CodeClimateIssues {
-	githubSlug := strings.Replace(repositoryURL[strings.LastIndex(repositoryURL, ":")+1:], ".git", "", -1)
+func codeClimate(githubSlug string) CodeClimateIssues {
 	addPublicRepository(githubSlug)
 	getRepositoryResponse := getRepository(githubSlug)
 	codeClimateIssues := getIssues(getRepositoryResponse)

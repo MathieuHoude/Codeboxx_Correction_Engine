@@ -5,19 +5,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 )
 
 // GradingRequest contains the necessary elements to grade a project
 type GradingRequest struct {
-	JobID             int                `json:"JobID"`
-	DeliverableID     int                `json:"DeliverableID"`
-	DeliverableScores []DeliverableScore `json:"DeliverableScores"`
-	GithubHandle      string             `json:"GithubHandle"`
-	RepositoryURL     string             `json:"RepositoryURL"`
-	DockerImageName   string             `json:"DockerImageName"`
-	TestingTool       string             `json:"TestingTool"`
+	JobID               int                `json:"JobID"`
+	DeliverableID       int                `json:"DeliverableID"`
+	DeliverableScores   []DeliverableScore `json:"DeliverableScores"`
+	DeliverableDeadline time.Time          `json:"DeliverableDeadline"`
+	GithubHandle        string             `json:"GithubHandle"`
+	RepositoryURL       string             `json:"RepositoryURL"`
+	DockerImageName     string             `json:"DockerImageName"`
+	TestingTool         string             `json:"TestingTool"`
 }
 
 //GradingResponse contains the informations to send back to the requester
@@ -63,6 +65,10 @@ func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	loadEnv()
+	// var x []DeliverableScore
+	// getLastCommitDate(x, "MathieuHoude/Rocket_Elevators_Controllers")
+	// codeClimate("MathieuHoude/Rocket_Elevators_Controllers")
+
 	startWorkers(5)  //Starts the workers that will receive tasks from the task_queue. Specify the number of workers needed.
 	handleRequests() //Start the API to accept and dispatch new grading requests
 }

@@ -56,10 +56,18 @@ func updateJobStatus(jobID int, newStatus string) {
 }
 
 func startGrading(gradingRequest GradingRequest) GradingResponse {
-	deliverableScores := docker(gradingRequest)
-	issues := codeClimate(gradingRequest.RepositoryURL)
+	githubSlug := strings.Replace(gradingRequest.RepositoryURL[strings.LastIndex(gradingRequest.RepositoryURL, ":")+1:], ".git", "", -1)
 
-	gradingResponse := GradingResponse{JobID: gradingRequest.JobID, DeliverableScores: deliverableScores, Issues: issues}
+	deliverableScores := docker(gradingRequest)
+	deliverableScores = getLastCommitDate(deliverableScores, githubSlug)
+	issues := codeClimate(githubSlug)
+
+	gradingResponse := GradingResponse{
+		JobID:             gradingRequest.JobID,
+		DeliverableID:     gradingRequest.DeliverableID,
+		DeliverableScores: deliverableScores,
+		Issues:            issues,
+	}
 
 	return gradingResponse
 
