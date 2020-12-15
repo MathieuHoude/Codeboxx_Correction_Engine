@@ -86,7 +86,7 @@ type GithubResponse []struct {
 	} `json:"parents"`
 }
 
-func getLastCommitDate(deliverableScores []DeliverableScore, githubSlug string) []DeliverableScore {
+func getLastCommitDate(deliverableScores []DeliverableScore, githubSlug string, deliverableDeadline time.Time) []DeliverableScore {
 	var githubResponse GithubResponse
 	response, err := http.Get("https://api.github.com/repos/" + githubSlug + "/commits")
 	if err != nil {
@@ -97,8 +97,8 @@ func getLastCommitDate(deliverableScores []DeliverableScore, githubSlug string) 
 		}
 	}
 
-	diff := time.Since(githubResponse[0].Commit.Committer.Date).Hours()
-	if diff > 48 {
+	deliveredOnTime := githubResponse[0].Commit.Committer.Date.Before(deliverableDeadline)
+	if deliveredOnTime {
 		for i := range deliverableScores {
 			if deliverableScores[i].ScoreCardItemName == "Delivered on Time" {
 				deliverableScores[i].Pass = true

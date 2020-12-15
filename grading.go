@@ -59,7 +59,7 @@ func startGrading(gradingRequest GradingRequest) GradingResponse {
 	githubSlug := strings.Replace(gradingRequest.RepositoryURL[strings.LastIndex(gradingRequest.RepositoryURL, ":")+1:], ".git", "", -1)
 
 	deliverableScores := docker(gradingRequest)
-	deliverableScores = getLastCommitDate(deliverableScores, githubSlug)
+	deliverableScores = getLastCommitDate(deliverableScores, githubSlug, gradingRequest.DeliverableDeadline)
 	issues := codeClimate(githubSlug)
 
 	gradingResponse := GradingResponse{

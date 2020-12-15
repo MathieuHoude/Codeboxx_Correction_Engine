@@ -46,6 +46,7 @@ func handleRequests() {
 
 func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 	var request GradingRequest
+	// request.DeliverableDeadline.Format("2020-12-05 13:31:50")
 	err := decodeJSONBody(w, r, &request)
 	if err != nil {
 		var mr *malformedRequest
@@ -57,6 +58,7 @@ func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	fmt.Println(request.DeliverableDeadline)
 	updateJobStatus(request.JobID, "Received")
 	newTask(request)
 	fmt.Fprintf(w, "The request has been received")
