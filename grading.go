@@ -76,10 +76,10 @@ func startGrading(gradingRequest GradingRequest) GradingResponse {
 func buildDeliverableScoresFromRspec(testResults RspecResults, deliverablesScores []DeliverableScore) []DeliverableScore {
 
 	for _, testResult := range testResults.Examples {
-		for _, deliverableScore := range deliverablesScores {
-			if testResult.Description == deliverableScore.ScoreCardItemName {
+		for i := 0; i < len(deliverablesScores); i++ {
+			if testResult.Description == deliverablesScores[i].ScoreCardItemName {
 				if testResult.Status == "passed" {
-					deliverableScore.Pass = false
+					deliverablesScores[i].Pass = true
 				}
 				break
 			}

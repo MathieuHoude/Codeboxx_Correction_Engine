@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -37,7 +38,7 @@ func addPublicRepository(githubSlug string) AddPublicRepositoryResponse {
 	jsonValue, _ := json.Marshal(jsonData)
 	request, _ := http.NewRequest("POST", "https://api.codeclimate.com/v1/github/repos", bytes.NewBuffer(jsonValue))
 	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Authorization", "Token token=85ab81759fb277a547e26acfc8b29b461030d449")
+	request.Header.Set("Authorization", "Token token="+os.Getenv("CODECLIMATETOKEN"))
 	request.Header.Set("Accept", "application/vnd.api+json")
 	client := &http.Client{}
 	response, err := client.Do(request)
