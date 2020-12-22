@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -39,18 +42,25 @@ func pullDockerImage(ctx context.Context, cli *client.Client, imageName string) 
 }
 
 func dockerBuild(cli *client.Client, imageName string) {
+	var curr, _ = os.Getwd()
+	err := os.Chdir(filepath.Join(curr, imageName))
+	if err != nil {
+		panic(err)
+	}
+
+	fileName := fmt.Sprintf("/tmp/%s_build.tar", time.Now().Format("20060102150405999999"))
 	tar := new(archivex.TarFile)
-	tar.Create("/tmp/rubyResidentialControllerGrading.tar")
-	tar.AddAll("rubyResidentialControllerGrading", true)
+	tar.Create(fileName)
+	tar.AddAll(".", true)
 	tar.Close()
 
-	dockerBuildContext, err := os.Open("/tmp/rubyResidentialControllerGrading.tar")
+	dockerBuildContext, err := os.Open(fileName)
 	defer dockerBuildContext.Close()
 
 	keys := getKeys()
 
 	buildOptions := types.ImageBuildOptions{
-		Dockerfile: "rubyResidentialControllerGrading/Dockerfile",
+		Dockerfile: "Dockerfile",
 		Tags:       []string{imageName + ":local"},
 		BuildArgs: map[string]*string{
 			"ssh_pub_key": keys.PublicKey,
@@ -63,13 +73,16 @@ func dockerBuild(cli *client.Client, imageName string) {
 		log.Fatal(err)
 	}
 
-	//time.Sleep(time.Second * 3)
-
 	defer buildResponse.Body.Close()
 
 	_, err = io.Copy(os.Stdout, buildResponse.Body)
 
-	deleteFile("/tmp/rubyResidentialControllerGrading.tar")
+	err = os.Chdir(curr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	deleteFile(fileName)
 }
 
 func docker(gradingRequest GradingRequest) []DeliverableScore {

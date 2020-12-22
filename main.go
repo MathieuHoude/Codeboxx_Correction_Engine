@@ -58,7 +58,6 @@ func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	fmt.Println(request.DeliverableDeadline)
 	updateJobStatus(request.JobID, "Received")
 	newTask(request)
 	fmt.Fprintf(w, "The request has been received")
@@ -67,10 +66,6 @@ func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	loadEnv()
-	// var x []DeliverableScore
-	// getLastCommitDate(x, "MathieuHoude/Rocket_Elevators_Controllers")
-	// codeClimate("MathieuHoude/Rocket_Elevators_Controllers")
-
 	startWorkers(5)  //Starts the workers that will receive tasks from the task_queue. Specify the number of workers needed.
 	handleRequests() //Start the API to accept and dispatch new grading requests
 }

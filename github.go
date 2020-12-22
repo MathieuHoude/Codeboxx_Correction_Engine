@@ -6,11 +6,23 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
-//GithubResponse is the data returned by the Github API
-type GithubResponse []struct {
+//GetRepositoryInvitationsResponse contains the IDs of all pending invitations
+type GetRepositoryInvitationsResponse []struct {
+	ID int `json:"id"`
+}
+
+//ForkRepositoryResponse contains the id and the name of the forked repository
+type ForkRepositoryResponse struct {
+	ID       int    `json:"id"`
+	FullName string `json:"full_name"`
+}
+
+//GetLastCommitResponse is the data returned by the Github API
+type GetLastCommitResponse []struct {
 	Sha    string `json:"sha"`
 	NodeID string `json:"node_id"`
 	Commit struct {
@@ -90,45 +102,58 @@ type GithubResponse []struct {
 
 //CreateIssueRequest contains the JSON to create an issue on github
 type CreateIssueRequest struct {
-	Title string            `json:"title"`
-	Body  CodeClimateIssues `json:"body"`
+	Title string `json:"title"`
+	Body  string `json:"body"`
 }
 
-func getLastCommitDate(deliverableScores []DeliverableScore, githubSlug string, deliverableDeadline time.Time) []DeliverableScore {
-	var githubResponse GithubResponse
-	response, err := http.Get("https://api.github.com/repos/" + githubSlug + "/commits")
+func getLastCommitDate(deliverableScores []DeliverableScore, githubSlug string) time.Time {
+	var lastCommit GetLastCommitResponse
+	request, _ := http.NewRequest("GET", "https://api.github.com/repos/"+githubSlug+"/commits", nil)
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "token "+os.Getenv("GITHUBTOKEN"))
+	request.Header.Set("Accept", "application/vnd.github.v3+json")
+	client := &http.Client{}
+	response, err := client.Do(request)
+
 	if err != nil {
 		fmt.Printf("The HTTP request failed with error %s\n", err)
 	} else {
-		if err := json.NewDecoder(response.Body).Decode(&githubResponse); err != nil {
+		if err := json.NewDecoder(response.Body).Decode(&lastCommit); err != nil {
 			panic(err)
 		}
 	}
+	lastCommitDate := lastCommit[0].Commit.Committer.Date
 
-	deliveredOnTime := githubResponse[0].Commit.Committer.Date.Before(deliverableDeadline)
-	if deliveredOnTime {
-		for i := range deliverableScores {
-			if deliverableScores[i].ScoreCardItemName == "Delivered on Time" {
-				deliverableScores[i].Pass = true
-			}
-		}
+	return lastCommitDate
+}
+
+func buildGithubIssueBody(issues CodeClimateIssues) string {
+	var sb strings.Builder
+	for _, issue := range issues.Data {
+		sb.WriteString("Issue: " + issue.Attributes.CheckName + " \n")
+		sb.WriteString("\t - File: " + issue.Attributes.ConstantName + " \n")
+		sb.WriteString("\t - Description: " + issue.Attributes.Description + " \n")
+		sb.WriteString(fmt.Sprintf("\t - Location: From line %d to %d. \n", +issue.Attributes.Location.StartLine, issue.Attributes.Location.EndLine))
+		sb.WriteString("\t - Severity: " + issue.Attributes.Severity + " \n \n")
 	}
-	return deliverableScores
+
+	return sb.String()
 }
 
 func createIssue(githubSlug string, issues CodeClimateIssues) {
+	issueBody := buildGithubIssueBody(issues)
 	jsonData := CreateIssueRequest{
-		Title: time.Now().String() + "_Grading_Request_Code_Analysis",
-		Body:  issues,
+		Title: time.Now().Format("2006-01-02T15:04:05.999999") + "_Grading_Request_Code_Analysis",
+		Body:  issueBody,
 	}
 	jsonValue, _ := json.Marshal(jsonData)
 	request, _ := http.NewRequest("POST", "https://api.github.com/repos/"+githubSlug+"/issues", bytes.NewBuffer(jsonValue))
 	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Authorization", "Token token="+os.Getenv("CODECLIMATETOKEN"))
+	request.Header.Set("Authorization", "token "+os.Getenv("GITHUBTOKEN"))
 	request.Header.Set("Accept", "application/vnd.github.v3+json")
 	client := &http.Client{}
 	response, err := client.Do(request)
-	var jsonResponseBody AddPublicRepositoryResponse
+	var jsonResponseBody AddRepositoryResponse
 	if err != nil {
 		fmt.Printf("The HTTP request failed with error %s\n", err)
 	} else {
@@ -138,4 +163,68 @@ func createIssue(githubSlug string, issues CodeClimateIssues) {
 		}
 
 	}
+}
+
+func checkRepositoryInvitations() []int {
+	var repositoryInvitationsIDs GetRepositoryInvitationsResponse
+	request, _ := http.NewRequest("GET", "https://api.github.com/user/repository_invitations", nil)
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "token "+os.Getenv("GITHUBTOKEN"))
+	request.Header.Set("Accept", "application/vnd.github.v3+json")
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		fmt.Printf("The HTTP request failed with error %s\n", err)
+	} else {
+
+		if err := json.NewDecoder(response.Body).Decode(&repositoryInvitationsIDs); err != nil {
+			panic(err)
+		}
+
+	}
+	var IDList []int
+	for _, invitation := range repositoryInvitationsIDs {
+		IDList = append(IDList, invitation.ID)
+	}
+
+	return IDList
+}
+
+func acceptRepositoryInvitations(IDList []int) {
+	for _, invitationID := range IDList {
+		request, _ := http.NewRequest("PATCH", "https://api.github.com/user/repository_invitations/"+fmt.Sprint(invitationID), nil)
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Authorization", "token "+os.Getenv("GITHUBTOKEN"))
+		request.Header.Set("Accept", "application/vnd.github.v3+json")
+		client := &http.Client{}
+		_, err := client.Do(request)
+		if err != nil {
+			fmt.Printf("The HTTP request failed with error %s\n", err)
+		}
+	}
+}
+
+func forkRepository(githubSlug string) string {
+	jsonData := struct {
+		Organization string `json:"organization"`
+	}{Organization: "Codeboxx-Students-Projects"}
+
+	jsonValue, _ := json.Marshal(jsonData)
+	request, _ := http.NewRequest("POST", "https://api.github.com/repos/"+githubSlug+"/forks", bytes.NewBuffer(jsonValue))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "token "+os.Getenv("GITHUBTOKEN"))
+	request.Header.Set("Accept", "application/vnd.github.v3+json")
+	client := &http.Client{}
+	var forkRepositoryResponse ForkRepositoryResponse
+	response, err := client.Do(request)
+	if err != nil {
+		fmt.Printf("The HTTP request failed with error %s\n", err)
+	} else {
+
+		if err := json.NewDecoder(response.Body).Decode(&forkRepositoryResponse); err != nil {
+			panic(err)
+		}
+	}
+
+	return forkRepositoryResponse.FullName
 }

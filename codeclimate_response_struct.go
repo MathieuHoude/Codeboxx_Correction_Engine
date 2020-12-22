@@ -2,8 +2,8 @@ package main
 
 import "time"
 
-//AddPublicRepositoryResponse contains the data returned by codeclimate
-type AddPublicRepositoryResponse struct {
+//AddRepositoryResponse contains the data returned by codeclimate
+type AddRepositoryResponse struct {
 	Data struct {
 		ID         string `json:"id"`
 		Type       string `json:"type"`

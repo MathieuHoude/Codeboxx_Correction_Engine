@@ -1,4 +1,4 @@
-FROM mathieuhoude/ruby-residential-controller-grading:latest
+FROM codeboxx/ruby-residential-controller-grading:latest
 ARG ssh_prv_key
 ARG ssh_pub_key
 # Add the keys and set permissions
@@ -9,6 +9,3 @@ RUN echo "$ssh_prv_key" > /root/.ssh/id_rsa && \
 
 # Start the main process.
 CMD /usr/bin/correction-script.sh
-
-
-

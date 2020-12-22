@@ -20,5 +20,6 @@ require (
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/streadway/amqp v1.0.0
+	google.golang.org/grpc v1.34.0 // indirect
 	gotest.tools/v3 v3.0.3 // indirect
 )
