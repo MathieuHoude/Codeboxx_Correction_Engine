@@ -28,6 +28,24 @@ func buildDeliverableScoresFromRspec(testResults RspecResults, deliverablesScore
 	return deliverablesScores
 }
 
+func buildDeliverableScoresFromJest(testResults JestResults, deliverablesScores []DeliverableScore) []DeliverableScore {
+
+	for _, testResult := range testResults.TestResults {
+		for _, assertionResult := range testResult.AssertionResults {
+			for i := 0; i < len(deliverablesScores); i++ {
+				if assertionResult.Title == deliverablesScores[i].ScoreCardItemName {
+					if assertionResult.Status == "passed" {
+						deliverablesScores[i].Pass = true
+					}
+					break
+				}
+			}
+		}
+
+	}
+	return deliverablesScores
+}
+
 func buildDeliverableScores(content []byte, gradingRequest GradingRequest) []DeliverableScore {
 	deliverableScores := gradingRequest.DeliverableScores
 
@@ -38,6 +56,12 @@ func buildDeliverableScores(content []byte, gradingRequest GradingRequest) []Del
 			panic(err)
 		}
 		deliverableScores = buildDeliverableScoresFromRspec(rspecResults, deliverableScores)
+	case "Jest":
+		var jestResults JestResults
+		if err := json.NewDecoder(strings.NewReader(string(content))).Decode(&jestResults); err != nil {
+			panic(err)
+		}
+		deliverableScores = buildDeliverableScoresFromJest(jestResults, deliverableScores)
 	}
 	return deliverableScores
 }
