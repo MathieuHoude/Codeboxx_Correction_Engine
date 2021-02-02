@@ -65,12 +65,12 @@ func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	err := sentry.Init(sentry.ClientOptions{
-		Dsn: "https://657e3fa075324ae2b5e3c4a81621bef9@o481104.ingest.sentry.io/5602523",
-	})
-	if err != nil {
-		log.Fatalf("sentry.Init: %s", err)
-	}
+	// err := sentry.Init(sentry.ClientOptions{
+	// 	Dsn: "https://657e3fa075324ae2b5e3c4a81621bef9@o481104.ingest.sentry.io/5602523",
+	// })
+	// if err != nil {
+	// 	log.Fatalf("sentry.Init: %s", err)
+	// }
 	loadEnv()
 	startWorkers(5)  //Starts the workers that will receive tasks from the task_queue. Specify the number of workers needed.
 	handleRequests() //Start the API to accept and dispatch new grading requests
