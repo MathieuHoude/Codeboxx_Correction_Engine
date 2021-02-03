@@ -34,6 +34,7 @@ func updateJobStatus(jobID int, newStatus string) {
 }
 
 func startGrading(gradingRequest GradingRequest) GradingResponse {
+
 	IDList := checkRepositoryInvitations()
 	if len(IDList) > 0 {
 		acceptRepositoryInvitations(IDList)
