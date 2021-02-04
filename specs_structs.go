@@ -72,3 +72,46 @@ type JestResults struct {
 	} `json:"testResults"`
 	WasInterrupted bool `json:"wasInterrupted"`
 }
+//PytestResults contains the data returned by Pytest
+type PytestResults struct {
+	Created     float64 `json:"created"`
+	Duration    float64 `json:"duration"`
+	Exitcode    int     `json:"exitcode"`
+	Root        string  `json:"root"`
+	Environment struct {
+		Python   string `json:"Python"`
+		Platform string `json:"Platform"`
+		Packages struct {
+			Pytest string `json:"pytest"`
+			Py     string `json:"py"`
+			Pluggy string `json:"pluggy"`
+		} `json:"Packages"`
+		Plugins struct {
+			Metadata   string `json:"metadata"`
+			JSONReport string `json:"json-report"`
+		} `json:"Plugins"`
+	} `json:"environment"`
+	Summary struct {
+		Passed    int `json:"passed"`
+		Total     int `json:"total"`
+		Collected int `json:"collected"`
+	} `json:"summary"`
+	Tests []struct {
+		Nodeid   string   `json:"nodeid"`
+		Lineno   int      `json:"lineno"`
+		Outcome  string   `json:"outcome"`
+		Keywords []string `json:"keywords"`
+		Setup    struct {
+			Duration float64 `json:"duration"`
+			Outcome  string  `json:"outcome"`
+		} `json:"setup"`
+		Call struct {
+			Duration float64 `json:"duration"`
+			Outcome  string  `json:"outcome"`
+		} `json:"call"`
+		Teardown struct {
+			Duration float64 `json:"duration"`
+			Outcome  string  `json:"outcome"`
+		} `json:"teardown"`
+	} `json:"tests"`
+}

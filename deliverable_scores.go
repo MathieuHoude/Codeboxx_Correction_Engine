@@ -46,6 +46,24 @@ func buildDeliverableScoresFromJest(testResults JestResults, deliverablesScores 
 	return deliverablesScores
 }
 
+func buildDeliverableScoresFromPytest(testResults PytestResults, deliverablesScores []DeliverableScore) []DeliverableScore {
+
+	for _, testResult := range testResults.Tests {
+		// for _, assertionResult := range testResult.AssertionResults {
+			for i := 0; i < len(deliverablesScores); i++ {
+				if testResult.Nodeid == "test_residential_controller.py::test_" + deliverablesScores[i].ScoreCardItemName {
+					if testResult.Outcome == "passed" {
+						deliverablesScores[i].Pass = true
+					}
+					break
+				}
+			}
+		// }
+
+	}
+	return deliverablesScores
+}
+
 func buildDeliverableScores(content []byte, gradingRequest GradingRequest) []DeliverableScore {
 	deliverableScores := gradingRequest.DeliverableScores
 
@@ -62,6 +80,12 @@ func buildDeliverableScores(content []byte, gradingRequest GradingRequest) []Del
 			panic(err)
 		}
 		deliverableScores = buildDeliverableScoresFromJest(jestResults, deliverableScores)
+	case "Pytest":
+		var PytestResults PytestResults
+		if err := json.NewDecoder(strings.NewReader(string(content))).Decode(&PytestResults); err != nil {
+			panic(err)
+		}
+		deliverableScores = buildDeliverableScoresFromPytest(PytestResults, deliverableScores)
 	}
 	return deliverableScores
 }
