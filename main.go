@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/gorilla/mux"
 )
 
@@ -37,11 +38,17 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 
 func handleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
+
 	myRouter.HandleFunc("/", homePage)
-	// myRouter.HandleFunc("/ruby-residential-controller", rubyResidentialControllerCorrection).Methods("POST")
 	myRouter.HandleFunc("/gradingrequest", newGradingRequest).Methods("POST")
+	myRouter.HandleFunc("/checkGithubAccess", checkGithubAccessRequest).Methods("POST")
+
 	log.Println("Starting server on :10000...")
 	log.Fatal(http.ListenAndServe(":10000", myRouter))
+}
+
+func checkGithubAccessRequest(w http.ResponseWriter, r *http.Request) {
+
 }
 
 func newGradingRequest(w http.ResponseWriter, r *http.Request) {
@@ -65,12 +72,12 @@ func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// err := sentry.Init(sentry.ClientOptions{
-	// 	Dsn: "https://657e3fa075324ae2b5e3c4a81621bef9@o481104.ingest.sentry.io/5602523",
-	// })
-	// if err != nil {
-	// 	log.Fatalf("sentry.Init: %s", err)
-	// }
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn: "https://657e3fa075324ae2b5e3c4a81621bef9@o481104.ingest.sentry.io/5602523",
+	})
+	if err != nil {
+		log.Fatalf("sentry.Init: %s", err)
+	}
 	loadEnv()
 	startWorkers(5)  //Starts the workers that will receive tasks from the task_queue. Specify the number of workers needed.
 	handleRequests() //Start the API to accept and dispatch new grading requests

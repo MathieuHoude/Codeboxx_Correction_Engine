@@ -106,6 +106,10 @@ type CreateIssueRequest struct {
 	Body  string `json:"body"`
 }
 
+// func checkGithubAccess() error {
+
+// }
+
 func getLastCommitDate(deliverableScores []DeliverableScore, githubSlug string) time.Time {
 	var lastCommit GetLastCommitResponse
 	request, _ := http.NewRequest("GET", "https://api.github.com/repos/"+githubSlug+"/commits", nil)

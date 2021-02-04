@@ -9,7 +9,7 @@ require (
 	github.com/docker/docker v20.10.1+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/getsentry/sentry-go v0.9.0 // indirect
+	github.com/getsentry/sentry-go v0.9.0
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/gddo v0.0.0-20201215145437-56ec5ff55fea
 	github.com/gorilla/mux v1.8.0

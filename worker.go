@@ -55,6 +55,12 @@ func worker(workerID int) {
 				log.Println(err)
 			}
 			log.Printf(" [x] New grading request for worker #"+fmt.Sprint(workerID)+": %s", gradingRequest.RepositoryURL)
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Println("Recovered in f", r)
+					updateJobStatus(gradingRequest.JobID, "Failed")
+				}
+			}()
 
 			gradingResponse := startGrading(gradingRequest)
 			updateJobStatus(gradingRequest.JobID, "Completed")
