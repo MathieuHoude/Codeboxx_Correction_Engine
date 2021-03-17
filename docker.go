@@ -131,7 +131,14 @@ func docker(gradingRequest GradingRequest) []DeliverableScore {
 	//read the first 8 bytes to ignore the HEADER part from docker container logs
 	p := make([]byte, 8)
 	out.Read(p)
-	content, _ := ioutil.ReadAll(out)
+	content, err := ioutil.ReadAll(out)
+
+	if err != nil {
+		log.Println("Error in ReadALL", err)
+	}
+
+	x := string(content)
+	println(x)
 
 	deliverableScores := buildDeliverableScores(content, gradingRequest)
 

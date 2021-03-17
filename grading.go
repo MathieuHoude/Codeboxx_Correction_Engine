@@ -41,8 +41,8 @@ func startGrading(gradingRequest GradingRequest) GradingResponse {
 	}
 
 	githubSlug := strings.Replace(gradingRequest.RepositoryURL[strings.LastIndex(gradingRequest.RepositoryURL, ":")+1:], ".git", "", -1)
-	deliverableScores := docker(gradingRequest)
-	deliverableScores = checkRespectOfDeadline(deliverableScores, githubSlug, gradingRequest)
+	// deliverableScores := docker(gradingRequest)
+	deliverableScores := checkRespectOfDeadline(gradingRequest.DeliverableScores, githubSlug, gradingRequest)
 	forkedRepoName := forkRepository(githubSlug)
 	issues := codeClimate(forkedRepoName, deliverableScores)
 	createIssue(githubSlug, issues)

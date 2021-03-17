@@ -44,7 +44,7 @@ func handleRequests() {
 	myRouter.HandleFunc("/checkGithubAccess", checkGithubAccessRequest).Methods("POST")
 
 	log.Println("Starting server on :10000...")
-	log.Fatal(http.ListenAndServe(":10000", myRouter))
+	log.Fatal(http.ListenAndServe("0.0.0.0:10000", myRouter))
 }
 
 func checkGithubAccessRequest(w http.ResponseWriter, r *http.Request) {

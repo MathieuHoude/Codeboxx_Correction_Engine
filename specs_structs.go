@@ -56,15 +56,13 @@ type JestResults struct {
 	Success     bool  `json:"success"`
 	TestResults []struct {
 		AssertionResults []struct {
-			AncestorTitles  []string      `json:"ancestorTitles"`
-			FailureMessages []interface{} `json:"failureMessages"`
-			FullName        string        `json:"fullName"`
-			Location        interface{}   `json:"location"`
-			Status          string        `json:"status"`
-			Title           string        `json:"title"`
+			AncestorTitles []string    `json:"ancestorTitles"`
+			FullName       string      `json:"fullName"`
+			Location       interface{} `json:"location"`
+			Status         string      `json:"status"`
+			Title          string      `json:"title"`
 		} `json:"assertionResults"`
 		EndTime   int64  `json:"endTime"`
-		Message   string `json:"message"`
 		Name      string `json:"name"`
 		StartTime int64  `json:"startTime"`
 		Status    string `json:"status"`
@@ -72,6 +70,7 @@ type JestResults struct {
 	} `json:"testResults"`
 	WasInterrupted bool `json:"wasInterrupted"`
 }
+
 //PytestResults contains the data returned by Pytest
 type PytestResults struct {
 	Created     float64 `json:"created"`
