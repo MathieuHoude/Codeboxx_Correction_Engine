@@ -7,7 +7,26 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
+
+// GradingRequest contains the necessary elements to grade a project
+type GradingRequest struct {
+	JobID               int          `json:"JobID"`
+	DeliverableID       int          `json:"DeliverableID"`
+	DeliverableDeadline time.Time    `json:"DeliverableDeadline"`
+	RepositoryURL       string       `json:"RepositoryURL"`
+	TestingTool         string       `json:"TestingTool"`
+	TestResults         []TestResult `json:"TestResults"`
+}
+
+//GradingResponse contains the informations to send back to the requester
+type GradingResponse struct {
+	JobID             int
+	DeliverableID     int
+	DeliverableScores []DeliverableScore
+	Issues            CodeClimateIssues
+}
 
 func sendBackResults(gradingResponse GradingResponse) {
 	jsonData, _ := json.Marshal(gradingResponse)
@@ -39,10 +58,10 @@ func startGrading(gradingRequest GradingRequest) GradingResponse {
 	if len(IDList) > 0 {
 		acceptRepositoryInvitations(IDList)
 	}
-
+	deliverableScores := buildDeliverableScores(gradingRequest.TestResults)
 	githubSlug := strings.Replace(gradingRequest.RepositoryURL[strings.LastIndex(gradingRequest.RepositoryURL, ":")+1:], ".git", "", -1)
-	// deliverableScores := docker(gradingRequest)
-	deliverableScores := checkRespectOfDeadline(gradingRequest.DeliverableScores, githubSlug, gradingRequest)
+	deliveredOnTimeScore := checkRespectOfDeadline(githubSlug, gradingRequest.DeliverableDeadline)
+	deliverableScores = append(deliverableScores, deliveredOnTimeScore)
 	forkedRepoName := forkRepository(githubSlug)
 	issues := codeClimate(forkedRepoName, deliverableScores)
 	createIssue(githubSlug, issues)
@@ -58,15 +77,13 @@ func startGrading(gradingRequest GradingRequest) GradingResponse {
 
 }
 
-func checkRespectOfDeadline(deliverableScores []DeliverableScore, githubSlug string, gradingRequest GradingRequest) []DeliverableScore {
-	lastCommitDate := getLastCommitDate(deliverableScores, githubSlug)
-	deliveredOnTime := lastCommitDate.Before(gradingRequest.DeliverableDeadline)
+func checkRespectOfDeadline(githubSlug string, deliverableDeadline time.Time) DeliverableScore {
+	deliveredOnTimeScore := DeliverableScore{"Delivered on Time", false}
+	lastCommitDate := getLastCommitDate(githubSlug)
+	deliveredOnTime := lastCommitDate.Before(deliverableDeadline)
+
 	if deliveredOnTime {
-		for i := range deliverableScores {
-			if deliverableScores[i].ScoreCardItemName == "Delivered on Time" {
-				deliverableScores[i].Pass = true
-			}
-		}
+		deliveredOnTimeScore.Pass = true
 	}
-	return deliverableScores
+	return deliveredOnTimeScore
 }

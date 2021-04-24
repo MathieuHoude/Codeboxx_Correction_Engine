@@ -1,13 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 
 	"github.com/streadway/amqp"
 )
 
-func newTask(gradingRequest GradingRequest) {
+func newTask(jobID int, request []byte, queueName string) {
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
@@ -17,15 +16,15 @@ func newTask(gradingRequest GradingRequest) {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"task_queue", // name
-		true,         // durable
-		false,        // delete when unused
-		false,        // exclusive
-		false,        // no-wait
-		nil,          // arguments
+		queueName, // name
+		true,      // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // no-wait
+		nil,       // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
-	body, err := json.Marshal(gradingRequest)
+	// body, err := json.Marshal(gradingRequest)
 	err = ch.Publish(
 		"",     // exchange
 		q.Name, // routing key
@@ -34,11 +33,11 @@ func newTask(gradingRequest GradingRequest) {
 		amqp.Publishing{
 			DeliveryMode: amqp.Persistent,
 			ContentType:  "text/plain",
-			Body:         []byte(body),
+			Body:         []byte(request),
 		})
 	failOnError(err, "Failed to publish a message")
 	if err == nil {
-		updateJobStatus(gradingRequest.JobID, "Queued")
+		updateJobStatus(jobID, "Queued for "+queueName)
 	}
-	log.Printf(" [x] Sent %s", body)
+	log.Printf(" [x] Sent %s", request)
 }

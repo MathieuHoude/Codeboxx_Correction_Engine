@@ -110,7 +110,7 @@ type CreateIssueRequest struct {
 
 // }
 
-func getLastCommitDate(deliverableScores []DeliverableScore, githubSlug string) time.Time {
+func getLastCommitDate(githubSlug string) time.Time {
 	var lastCommit GetLastCommitResponse
 	request, _ := http.NewRequest("GET", "https://api.github.com/repos/"+githubSlug+"/commits", nil)
 	request.Header.Set("Content-Type", "application/json")

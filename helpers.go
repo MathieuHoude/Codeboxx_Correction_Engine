@@ -141,8 +141,11 @@ func failOnError(err error, msg string) {
 	}
 }
 
-func startWorkers(workerAmount int) {
-	for i := 1; i <= workerAmount; i++ {
-		go worker(i)
+func startWorkers(correctionWorkerAmount, gradingWorkerAmount int) {
+	for i := 1; i <= correctionWorkerAmount; i++ {
+		go worker(i, "correction")
+	}
+	for j := 1; j <= gradingWorkerAmount; j++ {
+		go worker(j, "grading")
 	}
 }
