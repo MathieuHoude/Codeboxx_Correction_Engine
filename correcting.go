@@ -4,14 +4,13 @@ import "time"
 
 // CorrectionRequest contains the necessary elements to correct a project
 type CorrectionRequest struct {
-	JobID               int                `json:"JobID"`
-	DeliverableID       int                `json:"DeliverableID"`
-	DeliverableScores   []DeliverableScore `json:"DeliverableScores"`
-	DeliverableDeadline time.Time          `json:"DeliverableDeadline"`
-	GithubHandle        string             `json:"GithubHandle"`
-	RepositoryURL       string             `json:"RepositoryURL"`
-	DockerImageName     string             `json:"DockerImageName"`
-	TestingTool         string             `json:"TestingTool"`
+	JobID         int `json:"JobID"`
+	DeliverableID int `json:"DeliverableID"`
+	// DeliverableScores   []DeliverableScore `json:"DeliverableScores"`
+	DeliverableDeadline time.Time `json:"DeliverableDeadline"`
+	GithubHandle        string    `json:"GithubHandle"`
+	RepositoryURL       string    `json:"RepositoryURL"`
+	DockerImageName     string    `json:"DockerImageName"`
 }
 
 func startCorrecting(correctionRequest CorrectionRequest) {

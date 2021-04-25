@@ -16,7 +16,6 @@ type GradingRequest struct {
 	DeliverableID       int          `json:"DeliverableID"`
 	DeliverableDeadline time.Time    `json:"DeliverableDeadline"`
 	RepositoryURL       string       `json:"RepositoryURL"`
-	TestingTool         string       `json:"TestingTool"`
 	TestResults         []TestResult `json:"TestResults"`
 }
 

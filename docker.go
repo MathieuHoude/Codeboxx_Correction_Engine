@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -102,10 +103,9 @@ func docker(correctionRequest CorrectionRequest) {
 		Tty: false,
 		Env: []string{
 			"JOBID=" + fmt.Sprint(correctionRequest.JobID),
-			"DELIVERABLEID" + fmt.Sprint(correctionRequest.DeliverableID),
-			"DELIVERABLEDEADLINE" + fmt.Sprint(correctionRequest.DeliverableDeadline),
+			"DELIVERABLEID=" + fmt.Sprint(correctionRequest.DeliverableID),
+			"DELIVERABLEDEADLINE=" + fmt.Sprint(correctionRequest.DeliverableDeadline),
 			"REPOSITORYURL=" + correctionRequest.RepositoryURL,
-			"TESTINGTOOL=" + correctionRequest.TestingTool,
 		},
 	}, nil, nil, nil, "")
 	if err != nil {
@@ -126,24 +126,24 @@ func docker(correctionRequest CorrectionRequest) {
 	case <-statusCh:
 	}
 
-	// out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true, Follow: true})
-	// if err != nil {
-	// 	panic(err)
-	// }
+	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true, Follow: true})
+	if err != nil {
+		panic(err)
+	}
 
-	// defer out.Close()
+	defer out.Close()
 
-	// //read the first 8 bytes to ignore the HEADER part from docker container logs
-	// p := make([]byte, 8)
-	// out.Read(p)
-	// content, err := ioutil.ReadAll(out)
+	//read the first 8 bytes to ignore the HEADER part from docker container logs
+	p := make([]byte, 8)
+	out.Read(p)
+	content, err := ioutil.ReadAll(out)
 
-	// if err != nil {
-	// 	log.Println("Error in ReadALL", err)
-	// }
+	if err != nil {
+		log.Println("Error in ReadALL", err)
+	}
 
-	// x := string(content)
-	// println(x)
+	x := string(content)
+	println(x)
 
 	// deliverableScores := buildDeliverableScores(content, gradingRequest)
 
