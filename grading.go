@@ -6,23 +6,24 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
 
 // GradingRequest contains the necessary elements to grade a project
 type GradingRequest struct {
-	JobID               int          `json:"JobID"`
-	DeliverableID       int          `json:"DeliverableID"`
-	DeliverableDeadline time.Time    `json:"DeliverableDeadline"`
+	JobID               uint         `json:"JobID"`
+	DeliverableID       uint         `json:"DeliverableID"`
+	DeliverableDeadline uint64       `json:"DeliverableDeadline"`
 	RepositoryURL       string       `json:"RepositoryURL"`
 	TestResults         []TestResult `json:"TestResults"`
 }
 
 //GradingResponse contains the informations to send back to the requester
 type GradingResponse struct {
-	JobID             int
-	DeliverableID     int
+	JobID             uint
+	DeliverableID     uint
 	DeliverableScores []DeliverableScore
 	Issues            CodeClimateIssues
 }
@@ -40,7 +41,7 @@ func sendBackResults(gradingResponse GradingResponse) {
 	fmt.Println("Finished job #" + fmt.Sprint(gradingResponse.JobID))
 }
 
-func updateJobStatus(jobID int, newStatus string) {
+func updateJobStatus(jobID uint, newStatus string) {
 	jsonData := []byte(`{"GradingJobsID": "` + fmt.Sprint(jobID) + `", Results: "` + newStatus + `"}`)
 	request, _ := http.NewRequest("POST", os.Getenv("JOBUPDATEENDPOINT"), bytes.NewBuffer(jsonData))
 	request.Header.Set("Content-Type", "application/json")
@@ -76,10 +77,15 @@ func startGrading(gradingRequest GradingRequest) GradingResponse {
 
 }
 
-func checkRespectOfDeadline(githubSlug string, deliverableDeadline time.Time) DeliverableScore {
+func checkRespectOfDeadline(githubSlug string, deliverableDeadlineUnix uint64) DeliverableScore {
 	deliveredOnTimeScore := DeliverableScore{"Delivered on Time", false}
 	lastCommitDate := getLastCommitDate(githubSlug)
-	deliveredOnTime := lastCommitDate.Before(deliverableDeadline)
+	i, err := strconv.ParseInt(fmt.Sprint(deliverableDeadlineUnix), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	tm := time.Unix(i, 0)
+	deliveredOnTime := lastCommitDate.Before(tm)
 
 	if deliveredOnTime {
 		deliveredOnTimeScore.Pass = true
