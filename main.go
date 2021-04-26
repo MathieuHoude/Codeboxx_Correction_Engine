@@ -30,30 +30,32 @@ func handleRequests() {
 
 func checkGithubAccessRequest(w http.ResponseWriter, r *http.Request) {
 	params, ok := r.URL.Query()["repositoryURL"]
-	repositoryURL := params[0]
-	if !ok || len(repositoryURL) < 1 {
+	if !ok || len(params[0]) < 1 {
 		log.Println("Url Param 'key' is missing")
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Param 'repositoryURL' is missing")
 		return
+	} else {
+
+		IDList := checkRepositoryInvitations()
+		if len(IDList) > 0 {
+			acceptRepositoryInvitations(IDList)
+		}
+		hasGivenAccess := checkGithubAccess(params[0])
+		response := struct {
+			HasGivenAccess bool `json:"hasGivenAccess"`
+		}{hasGivenAccess}
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			panic(err)
+		}
 	}
-	IDList := checkRepositoryInvitations()
-	if len(IDList) > 0 {
-		acceptRepositoryInvitations(IDList)
-	}
-	hasGivenAccess := checkGithubAccess(repositoryURL)
-	response := struct {
-		HasGivenAccess bool `json:"hasGivenAccess"`
-	}{hasGivenAccess}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		panic(err)
-	}
-	// fmt.Fprintf(w, hasGivenAccess)
 }
 
 func newCorrectionRequest(w http.ResponseWriter, r *http.Request) {
 	var request CorrectionRequest
-	request.DeliverableDeadline.Format("2020-12-05 13:31:50")
+	// request.DeliverableDeadline.Format("2020-12-05 13:31:50")
 	err := decodeJSONBody(w, r, &request)
 	if err != nil {
 		var mr *malformedRequest
@@ -76,7 +78,7 @@ func newCorrectionRequest(w http.ResponseWriter, r *http.Request) {
 
 func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 	var request GradingRequest
-	request.DeliverableDeadline.Format("2021-12-05 13:31:50 +0000 UTC")
+	// request.DeliverableDeadline.Format("2021-12-05 13:31:50 +0000 UTC")
 	err := decodeJSONBody(w, r, &request)
 	if err != nil {
 		var mr *malformedRequest
