@@ -13,11 +13,11 @@ import (
 
 // GradingRequest contains the necessary elements to grade a project
 type GradingRequest struct {
-	JobID               uint         `json:"JobID"`
-	DeliverableID       uint         `json:"DeliverableID"`
-	DeliverableDeadline uint64       `json:"DeliverableDeadline"`
-	RepositoryURL       string       `json:"RepositoryURL"`
-	TestResults         []TestResult `json:"TestResults"`
+	JobID                   uint         `json:"JobID"`
+	DeliverableID           uint         `json:"DeliverableID"`
+	UnixDeliverableDeadline uint64       `json:"UnixDeliverableDeadline"`
+	RepositoryURL           string       `json:"RepositoryURL"`
+	TestResults             []TestResult `json:"TestResults"`
 }
 
 //GradingResponse contains the informations to send back to the requester
@@ -60,7 +60,7 @@ func startGrading(gradingRequest GradingRequest) GradingResponse {
 	}
 	deliverableScores := buildDeliverableScores(gradingRequest.TestResults)
 	githubSlug := strings.Replace(gradingRequest.RepositoryURL[strings.LastIndex(gradingRequest.RepositoryURL, ":")+1:], ".git", "", -1)
-	deliveredOnTimeScore := checkRespectOfDeadline(githubSlug, gradingRequest.DeliverableDeadline)
+	deliveredOnTimeScore := checkRespectOfDeadline(githubSlug, gradingRequest.UnixDeliverableDeadline)
 	deliverableScores = append(deliverableScores, deliveredOnTimeScore)
 	forkedRepoName := forkRepository(githubSlug)
 	issues := codeClimate(forkedRepoName, deliverableScores)
@@ -74,13 +74,12 @@ func startGrading(gradingRequest GradingRequest) GradingResponse {
 	}
 
 	return gradingResponse
-
 }
 
-func checkRespectOfDeadline(githubSlug string, deliverableDeadlineUnix uint64) DeliverableScore {
+func checkRespectOfDeadline(githubSlug string, UnixDeliverableDeadlineUnix uint64) DeliverableScore {
 	deliveredOnTimeScore := DeliverableScore{"Delivered on Time", false}
 	lastCommitDate := getLastCommitDate(githubSlug)
-	i, err := strconv.ParseInt(fmt.Sprint(deliverableDeadlineUnix), 10, 64)
+	i, err := strconv.ParseInt(fmt.Sprint(UnixDeliverableDeadlineUnix), 10, 64)
 	if err != nil {
 		panic(err)
 	}

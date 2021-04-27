@@ -104,7 +104,7 @@ func docker(correctionRequest CorrectionRequest) {
 		Env: []string{
 			"JOBID=" + fmt.Sprint(correctionRequest.JobID),
 			"DELIVERABLEID=" + fmt.Sprint(correctionRequest.DeliverableID),
-			"DELIVERABLEDEADLINE=" + fmt.Sprint(correctionRequest.DeliverableDeadline),
+			"UnixDeliverableDeadline=" + fmt.Sprint(correctionRequest.UnixDeliverableDeadline),
 			"REPOSITORYURL=" + correctionRequest.RepositoryURL,
 		},
 	}, nil, nil, nil, "")
@@ -144,8 +144,4 @@ func docker(correctionRequest CorrectionRequest) {
 
 	x := string(content)
 	println(x)
-
-	// deliverableScores := buildDeliverableScores(content, gradingRequest)
-
-	// return deliverableScores
 }

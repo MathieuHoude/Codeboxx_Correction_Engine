@@ -55,7 +55,6 @@ func checkGithubAccessRequest(w http.ResponseWriter, r *http.Request) {
 
 func newCorrectionRequest(w http.ResponseWriter, r *http.Request) {
 	var request CorrectionRequest
-	// request.DeliverableDeadline.Format("2020-12-05 13:31:50")
 	err := decodeJSONBody(w, r, &request)
 	if err != nil {
 		var mr *malformedRequest
@@ -78,7 +77,6 @@ func newCorrectionRequest(w http.ResponseWriter, r *http.Request) {
 
 func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 	var request GradingRequest
-	// request.DeliverableDeadline.Format("2021-12-05 13:31:50 +0000 UTC")
 	err := decodeJSONBody(w, r, &request)
 	if err != nil {
 		var mr *malformedRequest
