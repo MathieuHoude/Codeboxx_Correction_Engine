@@ -66,7 +66,7 @@ func newCorrectionRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	updateJobStatus(request.JobID, "Received for correction")
+	updateJobStatus(request.JobID, "Received")
 	body, err := json.Marshal(request)
 	if err == nil {
 		newTask(request.JobID, body, "correction")
@@ -88,7 +88,7 @@ func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	updateJobStatus(request.JobID, "Received for grading")
+	updateJobStatus(request.JobID, "Grading")
 	body, err := json.Marshal(request)
 	if err == nil {
 		newTask(request.JobID, body, "grading")

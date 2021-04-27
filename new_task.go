@@ -37,7 +37,7 @@ func newTask(jobID uint, request []byte, queueName string) {
 		})
 	failOnError(err, "Failed to publish a message")
 	if err == nil {
-		updateJobStatus(jobID, "Queued for "+queueName)
+		updateJobStatus(jobID, "Queued")
 	}
 	log.Printf(" [x] Sent %s", request)
 }
