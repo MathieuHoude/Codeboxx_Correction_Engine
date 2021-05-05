@@ -40,6 +40,7 @@ func sendBackResults(gradingResponse GradingResponse) {
 	fmt.Println("Finished job #" + fmt.Sprint(gradingResponse.JobID))
 }
 
+//newStatus should be max 20 caracters long
 func updateJobStatus(jobID uint, newStatus string) {
 	jsonData := []byte(`{"GradingJobsID": "` + fmt.Sprint(jobID) + `", Results: "` + newStatus + `"}`)
 	request, _ := http.NewRequest("POST", os.Getenv("JOBUPDATEENDPOINT"), bytes.NewBuffer(jsonData))

@@ -104,7 +104,7 @@ func docker(correctionRequest CorrectionRequest) {
 		Env: []string{
 			"JOBID=" + fmt.Sprint(correctionRequest.JobID),
 			"DELIVERABLEID=" + fmt.Sprint(correctionRequest.DeliverableID),
-			"UnixDeliverableDeadline=" + fmt.Sprint(correctionRequest.UnixDeliverableDeadline),
+			"UNIXDELIVERABLEDEADLINE=" + fmt.Sprint(correctionRequest.UnixDeliverableDeadline),
 			"REPOSITORYURL=" + correctionRequest.RepositoryURL,
 		},
 	}, nil, nil, nil, "")
