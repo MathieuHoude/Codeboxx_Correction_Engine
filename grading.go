@@ -27,7 +27,7 @@ type GradingResponse struct {
 	Issues            CodeClimateIssues
 }
 
-func sendBackResults(gradingResponse GradingResponse) {
+func sendBackResults(jobID uint, gradingResponse GradingResponse) {
 	jsonData, _ := json.Marshal(gradingResponse)
 	request, _ := http.NewRequest("POST", os.Getenv("DELIVERABLESCORESUPDATEENDPOINT"), bytes.NewBuffer(jsonData))
 	request.Header.Set("Content-Type", "application/json")
@@ -37,7 +37,7 @@ func sendBackResults(gradingResponse GradingResponse) {
 	failOnError(err, "Failed to send back grading results")
 	defer response.Body.Close()
 
-	fmt.Println("Finished job #" + fmt.Sprint(gradingResponse.JobID))
+	fmt.Println("Finished job #" + fmt.Sprint(jobID))
 }
 
 //newStatus should be max 20 caracters long
@@ -67,7 +67,6 @@ func startGrading(gradingRequest GradingRequest) GradingResponse {
 	createIssue(githubSlug, issues)
 
 	gradingResponse := GradingResponse{
-		JobID:             gradingRequest.JobID,
 		DeliverableID:     gradingRequest.DeliverableID,
 		DeliverableScores: deliverableScores,
 		Issues:            issues,

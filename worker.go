@@ -74,7 +74,7 @@ func worker(workerID int, queueName string) {
 				log.Printf(" [x] New "+queueName+" request for worker #"+fmt.Sprint(workerID)+": %s", gradingRequest.RepositoryURL)
 				gradingResponse = startGrading(gradingRequest)
 				updateJobStatus(gradingRequest.JobID, "Completed")
-				sendBackResults(gradingResponse)
+				sendBackResults(gradingRequest.JobID, gradingResponse)
 			}
 
 		}
