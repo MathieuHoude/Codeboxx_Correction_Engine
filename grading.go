@@ -22,7 +22,6 @@ type GradingRequest struct {
 
 //GradingResponse contains the informations to send back to the requester
 type GradingResponse struct {
-	JobID             uint
 	DeliverableID     uint
 	DeliverableScores []DeliverableScore
 	Issues            CodeClimateIssues
