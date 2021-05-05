@@ -106,11 +106,22 @@ type CreateIssueRequest struct {
 	Body  string `json:"body"`
 }
 
-// func checkGithubAccess() error {
+func checkGithubAccess(repositoryURL string) bool {
+	githubSlug := strings.Replace(repositoryURL[strings.LastIndex(repositoryURL, ":")+1:], ".git", "", -1)
+	request, _ := http.NewRequest("GET", "https://api.github.com/repos/"+githubSlug, nil)
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "token "+os.Getenv("GITHUBTOKEN"))
+	request.Header.Set("Accept", "application/vnd.github.v3+json")
+	client := &http.Client{}
+	response, _ := client.Do(request)
+	if response.StatusCode >= 200 && response.StatusCode <= 299 {
+		return true
+	} else {
+		return false
+	}
+}
 
-// }
-
-func getLastCommitDate(deliverableScores []DeliverableScore, githubSlug string) time.Time {
+func getLastCommitDate(githubSlug string) time.Time {
 	var lastCommit GetLastCommitResponse
 	request, _ := http.NewRequest("GET", "https://api.github.com/repos/"+githubSlug+"/commits", nil)
 	request.Header.Set("Content-Type", "application/json")

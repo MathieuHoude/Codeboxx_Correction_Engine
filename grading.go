@@ -6,8 +6,26 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 )
+
+// GradingRequest contains the necessary elements to grade a project
+type GradingRequest struct {
+	JobID                   uint         `json:"JobID"`
+	DeliverableID           uint         `json:"DeliverableID"`
+	UnixDeliverableDeadline uint64       `json:"UnixDeliverableDeadline"`
+	RepositoryURL           string       `json:"RepositoryURL"`
+	TestResults             []TestResult `json:"TestResults"`
+}
+
+//GradingResponse contains the informations to send back to the requester
+type GradingResponse struct {
+	DeliverableID     uint
+	DeliverableScores []DeliverableScore
+	Issues            CodeClimateIssues
+}
 
 func sendBackResults(gradingResponse GradingResponse) {
 	jsonData, _ := json.Marshal(gradingResponse)
@@ -22,7 +40,8 @@ func sendBackResults(gradingResponse GradingResponse) {
 	fmt.Println("Finished job #" + fmt.Sprint(gradingResponse.JobID))
 }
 
-func updateJobStatus(jobID int, newStatus string) {
+//newStatus should be max 20 caracters long
+func updateJobStatus(jobID uint, newStatus string) {
 	jsonData := []byte(`{"GradingJobsID": "` + fmt.Sprint(jobID) + `", Results: "` + newStatus + `"}`)
 	request, _ := http.NewRequest("POST", os.Getenv("JOBUPDATEENDPOINT"), bytes.NewBuffer(jsonData))
 	request.Header.Set("Content-Type", "application/json")
@@ -39,10 +58,10 @@ func startGrading(gradingRequest GradingRequest) GradingResponse {
 	if len(IDList) > 0 {
 		acceptRepositoryInvitations(IDList)
 	}
-
+	deliverableScores := buildDeliverableScores(gradingRequest.TestResults)
 	githubSlug := strings.Replace(gradingRequest.RepositoryURL[strings.LastIndex(gradingRequest.RepositoryURL, ":")+1:], ".git", "", -1)
-	deliverableScores := docker(gradingRequest)
-	deliverableScores = checkRespectOfDeadline(deliverableScores, githubSlug, gradingRequest)
+	deliveredOnTimeScore := checkRespectOfDeadline(githubSlug, gradingRequest.UnixDeliverableDeadline)
+	deliverableScores = append(deliverableScores, deliveredOnTimeScore)
 	forkedRepoName := forkRepository(githubSlug)
 	issues := codeClimate(forkedRepoName, deliverableScores)
 	createIssue(githubSlug, issues)
@@ -55,18 +74,20 @@ func startGrading(gradingRequest GradingRequest) GradingResponse {
 	}
 
 	return gradingResponse
-
 }
 
-func checkRespectOfDeadline(deliverableScores []DeliverableScore, githubSlug string, gradingRequest GradingRequest) []DeliverableScore {
-	lastCommitDate := getLastCommitDate(deliverableScores, githubSlug)
-	deliveredOnTime := lastCommitDate.Before(gradingRequest.DeliverableDeadline)
-	if deliveredOnTime {
-		for i := range deliverableScores {
-			if deliverableScores[i].ScoreCardItemName == "Delivered on Time" {
-				deliverableScores[i].Pass = true
-			}
-		}
+func checkRespectOfDeadline(githubSlug string, UnixDeliverableDeadlineUnix uint64) DeliverableScore {
+	deliveredOnTimeScore := DeliverableScore{"Delivered on Time", false}
+	lastCommitDate := getLastCommitDate(githubSlug)
+	i, err := strconv.ParseInt(fmt.Sprint(UnixDeliverableDeadlineUnix), 10, 64)
+	if err != nil {
+		panic(err)
 	}
-	return deliverableScores
+	tm := time.Unix(i, 0)
+	deliveredOnTime := lastCommitDate.Before(tm)
+
+	if deliveredOnTime {
+		deliveredOnTimeScore.Pass = true
+	}
+	return deliveredOnTimeScore
 }

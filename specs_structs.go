@@ -23,55 +23,12 @@ type RspecResults struct {
 	SummaryLine string `json:"summary_line"`
 }
 
-//JestResults contains the data returned by Jest
-type JestResults struct {
-	NumFailedTestSuites       int           `json:"numFailedTestSuites"`
-	NumFailedTests            int           `json:"numFailedTests"`
-	NumPassedTestSuites       int           `json:"numPassedTestSuites"`
-	NumPassedTests            int           `json:"numPassedTests"`
-	NumPendingTestSuites      int           `json:"numPendingTestSuites"`
-	NumPendingTests           int           `json:"numPendingTests"`
-	NumRuntimeErrorTestSuites int           `json:"numRuntimeErrorTestSuites"`
-	NumTodoTests              int           `json:"numTodoTests"`
-	NumTotalTestSuites        int           `json:"numTotalTestSuites"`
-	NumTotalTests             int           `json:"numTotalTests"`
-	OpenHandles               []interface{} `json:"openHandles"`
-	Snapshot                  struct {
-		Added               int           `json:"added"`
-		DidUpdate           bool          `json:"didUpdate"`
-		Failure             bool          `json:"failure"`
-		FilesAdded          int           `json:"filesAdded"`
-		FilesRemoved        int           `json:"filesRemoved"`
-		FilesRemovedList    []interface{} `json:"filesRemovedList"`
-		FilesUnmatched      int           `json:"filesUnmatched"`
-		FilesUpdated        int           `json:"filesUpdated"`
-		Matched             int           `json:"matched"`
-		Total               int           `json:"total"`
-		Unchecked           int           `json:"unchecked"`
-		UncheckedKeysByFile []interface{} `json:"uncheckedKeysByFile"`
-		Unmatched           int           `json:"unmatched"`
-		Updated             int           `json:"updated"`
-	} `json:"snapshot"`
-	StartTime   int64 `json:"startTime"`
-	Success     bool  `json:"success"`
-	TestResults []struct {
-		AssertionResults []struct {
-			AncestorTitles  []string      `json:"ancestorTitles"`
-			FailureMessages []interface{} `json:"failureMessages"`
-			FullName        string        `json:"fullName"`
-			Location        interface{}   `json:"location"`
-			Status          string        `json:"status"`
-			Title           string        `json:"title"`
-		} `json:"assertionResults"`
-		EndTime   int64  `json:"endTime"`
-		Message   string `json:"message"`
-		Name      string `json:"name"`
-		StartTime int64  `json:"startTime"`
-		Status    string `json:"status"`
-		Summary   string `json:"summary"`
-	} `json:"testResults"`
-	WasInterrupted bool `json:"wasInterrupted"`
+//TestResults contains the data returned by Jest
+type TestResult struct {
+	ScoreCardItemName string `json:"ScoreCardItemName"`
+	Status            string `json:"Status"`
 }
+
 //PytestResults contains the data returned by Pytest
 type PytestResults struct {
 	Created     float64 `json:"created"`

@@ -54,7 +54,7 @@ func dockerBuild(cli *client.Client, imageName string) {
 	tar.AddAll(".", true)
 	tar.Close()
 
-	dockerBuildContext, err := os.Open(fileName)
+	dockerBuildContext, _ := os.Open(fileName)
 	defer dockerBuildContext.Close()
 
 	keys := getKeys()
@@ -85,29 +85,34 @@ func dockerBuild(cli *client.Client, imageName string) {
 	deleteFile(fileName)
 }
 
-func docker(gradingRequest GradingRequest) []DeliverableScore {
-	updateJobStatus(gradingRequest.JobID, "Building")
+func docker(correctionRequest CorrectionRequest) {
+	updateJobStatus(correctionRequest.JobID, "Building")
 
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
 	}
-	pullDockerImage(ctx, cli, gradingRequest.DockerImageName)
-	dockerBuild(cli, gradingRequest.DockerImageName)
+	pullDockerImage(ctx, cli, correctionRequest.DockerImageName)
+	dockerBuild(cli, correctionRequest.DockerImageName)
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: gradingRequest.DockerImageName + ":local",
+		Image: correctionRequest.DockerImageName + ":local",
 		// Image: imageName + ":test",
 		Cmd: []string{"/usr/bin/correction-script.sh"},
 		Tty: false,
-		Env: []string{"GITHUBHANDLE=" + gradingRequest.GithubHandle},
+		Env: []string{
+			"JOBID=" + fmt.Sprint(correctionRequest.JobID),
+			"DELIVERABLEID=" + fmt.Sprint(correctionRequest.DeliverableID),
+			"UNIXDELIVERABLEDEADLINE=" + fmt.Sprint(correctionRequest.UnixDeliverableDeadline),
+			"REPOSITORYURL=" + correctionRequest.RepositoryURL,
+		},
 	}, nil, nil, nil, "")
 	if err != nil {
 		panic(err)
 	}
 
-	updateJobStatus(gradingRequest.JobID, "Grading")
+	updateJobStatus(correctionRequest.JobID, "Correcting")
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		panic(err)
 	}
@@ -131,9 +136,12 @@ func docker(gradingRequest GradingRequest) []DeliverableScore {
 	//read the first 8 bytes to ignore the HEADER part from docker container logs
 	p := make([]byte, 8)
 	out.Read(p)
-	content, _ := ioutil.ReadAll(out)
+	content, err := ioutil.ReadAll(out)
 
-	deliverableScores := buildDeliverableScores(content, gradingRequest)
+	if err != nil {
+		log.Println("Error in ReadALL", err)
+	}
 
-	return deliverableScores
+	x := string(content)
+	println(x)
 }

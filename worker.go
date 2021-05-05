@@ -8,7 +8,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func worker(workerID int) {
+func worker(workerID int, queueName string) {
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
@@ -18,12 +18,12 @@ func worker(workerID int) {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"task_queue", // name
-		true,         // durable
-		false,        // delete when unused
-		false,        // exclusive
-		false,        // no-wait
-		nil,          // arguments
+		queueName, // name
+		true,      // durable
+		false,     // delete when unused
+		false,     // exclusive
+		false,     // no-wait
+		nil,       // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
 
@@ -49,25 +49,37 @@ func worker(workerID int) {
 
 	go func() {
 		for d := range msgs {
+			var correctionRequest CorrectionRequest
 			var gradingRequest GradingRequest
-			err = json.Unmarshal(d.Body, &gradingRequest)
-			if err != nil {
-				log.Println(err)
-			}
-			log.Printf(" [x] New grading request for worker #"+fmt.Sprint(workerID)+": %s", gradingRequest.RepositoryURL)
+			var gradingResponse GradingResponse
+
 			defer func() {
 				if r := recover(); r != nil {
 					fmt.Println("Recovered in f", r)
 					updateJobStatus(gradingRequest.JobID, "Failed")
 				}
 			}()
+			if queueName == "correction" {
+				err = json.Unmarshal(d.Body, &correctionRequest)
+				if err != nil {
+					log.Println(err)
+				}
+				log.Printf(" [x] New "+queueName+" request for worker #"+fmt.Sprint(workerID)+": %s", correctionRequest.RepositoryURL)
+				startCorrecting(correctionRequest)
+			} else if queueName == "grading" {
+				err = json.Unmarshal(d.Body, &gradingRequest)
+				if err != nil {
+					log.Println(err)
+				}
+				log.Printf(" [x] New "+queueName+" request for worker #"+fmt.Sprint(workerID)+": %s", gradingRequest.RepositoryURL)
+				gradingResponse = startGrading(gradingRequest)
+				updateJobStatus(gradingRequest.JobID, "Completed")
+				sendBackResults(gradingResponse)
+			}
 
-			gradingResponse := startGrading(gradingRequest)
-			updateJobStatus(gradingRequest.JobID, "Completed")
-			sendBackResults(gradingResponse)
 		}
 	}()
 
-	log.Printf(" [*] Waiting for grading request.")
+	log.Printf(" [*] Waiting for " + queueName + " request.")
 	<-forever
 }
