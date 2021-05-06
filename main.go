@@ -23,12 +23,35 @@ func handleRequests() {
 	myRouter.HandleFunc("/correctionrequest", newCorrectionRequest).Methods("POST")
 	myRouter.HandleFunc("/gradingrequest", newGradingRequest).Methods("POST")
 	myRouter.HandleFunc("/checkGithubAccess", checkGithubAccessRequest).Methods("GET")
+	myRouter.HandleFunc("/checkIfGithubUserExists", checkIfGithubUserExistsRequest).Methods("GET")
 
 	log.Println("Starting server on :10000...")
 	log.Fatal(http.ListenAndServe("0.0.0.0:10000", myRouter))
 }
 
+func checkIfGithubUserExistsRequest(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint Hit: checkIfGithubUserExists")
+	params, ok := r.URL.Query()["username"]
+	if !ok || len(params[0]) < 1 {
+		log.Println("Url Param 'username' is missing")
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Param 'username' is missing")
+		return
+	} else {
+		userExists := checkIfGithubUserExists(params[0])
+		response := struct {
+			UserExists bool `json:"userExists"`
+		}{userExists}
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			panic(err)
+		}
+	}
+}
+
 func checkGithubAccessRequest(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint Hit: checkGithubAccess")
 	params, ok := r.URL.Query()["repositoryURL"]
 	if !ok || len(params[0]) < 1 {
 		log.Println("Url Param 'key' is missing")
