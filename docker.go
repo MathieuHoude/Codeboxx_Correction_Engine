@@ -75,7 +75,7 @@ func dockerBuild(cli *client.Client, imageName string) {
 
 	defer buildResponse.Body.Close()
 
-	_, err = io.Copy(os.Stdout, buildResponse.Body)
+	io.Copy(os.Stdout, buildResponse.Body)
 
 	err = os.Chdir(curr)
 	if err != nil {
