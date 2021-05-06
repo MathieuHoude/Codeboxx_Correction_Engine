@@ -77,6 +77,7 @@ func checkGithubAccessRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func newCorrectionRequest(w http.ResponseWriter, r *http.Request) {
+	defer sentry.Recover()
 	var request CorrectionRequest
 	err := decodeJSONBody(w, r, &request)
 	if err != nil {
@@ -99,6 +100,7 @@ func newCorrectionRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func newGradingRequest(w http.ResponseWriter, r *http.Request) {
+	defer sentry.Recover()
 	var request GradingRequest
 	err := decodeJSONBody(w, r, &request)
 	if err != nil {
@@ -122,7 +124,9 @@ func newGradingRequest(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	err := sentry.Init(sentry.ClientOptions{
-		Dsn: "https://657e3fa075324ae2b5e3c4a81621bef9@o481104.ingest.sentry.io/5602523",
+		Dsn:              "https://657e3fa075324ae2b5e3c4a81621bef9@o481104.ingest.sentry.io/5602523",
+		Debug:            true,
+		AttachStacktrace: true,
 	})
 	if err != nil {
 		log.Fatalf("sentry.Init: %s", err)

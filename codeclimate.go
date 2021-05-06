@@ -37,29 +37,29 @@ func codeClimateHTTPRequest(method, URL string, body []byte) (*http.Response, er
 	return response, err
 }
 
-func addPublicRepository(githubSlug string) AddRepositoryResponse {
-	jsonData := JSONRequestBody{
-		Data{
-			Type: "repos",
-			Attributes: Attributes{
-				URL: "https://github.com/" + githubSlug,
-			},
-		},
-	}
-	jsonValue, _ := json.Marshal(jsonData)
-	response, err := codeClimateHTTPRequest("POST", "https://api.codeclimate.com/v1/github/repos", jsonValue)
-	var jsonResponseBody AddRepositoryResponse
-	if err != nil {
-		fmt.Printf("The HTTP request failed with error %s\n", err)
-	} else {
+// func addPublicRepository(githubSlug string) AddRepositoryResponse {
+// 	jsonData := JSONRequestBody{
+// 		Data{
+// 			Type: "repos",
+// 			Attributes: Attributes{
+// 				URL: "https://github.com/" + githubSlug,
+// 			},
+// 		},
+// 	}
+// 	jsonValue, _ := json.Marshal(jsonData)
+// 	response, err := codeClimateHTTPRequest("POST", "https://api.codeclimate.com/v1/github/repos", jsonValue)
+// 	var jsonResponseBody AddRepositoryResponse
+// 	if err != nil {
+// 		fmt.Printf("The HTTP request failed with error %s\n", err)
+// 	} else {
 
-		if err := json.NewDecoder(response.Body).Decode(&jsonResponseBody); err != nil {
-			panic(err)
-		}
+// 		if err := json.NewDecoder(response.Body).Decode(&jsonResponseBody); err != nil {
+// 			panic(err)
+// 		}
 
-	}
-	return jsonResponseBody
-}
+// 	}
+// 	return jsonResponseBody
+// }
 
 func addPrivateRepository(githubSlug string) AddRepositoryResponse {
 	jsonData := JSONRequestBody{

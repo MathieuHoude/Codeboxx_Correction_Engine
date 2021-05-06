@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/streadway/amqp"
 )
 
@@ -48,17 +49,12 @@ func worker(workerID int, queueName string) {
 	forever := make(chan bool)
 
 	go func() {
+		defer sentry.Recover()
 		for d := range msgs {
 			var correctionRequest CorrectionRequest
 			var gradingRequest GradingRequest
 			var gradingResponse GradingResponse
 
-			defer func() {
-				if r := recover(); r != nil {
-					fmt.Println("Recovered in f", r)
-					updateJobStatus(gradingRequest.JobID, "Failed")
-				}
-			}()
 			if queueName == "correction" {
 				err = json.Unmarshal(d.Body, &correctionRequest)
 				if err != nil {
