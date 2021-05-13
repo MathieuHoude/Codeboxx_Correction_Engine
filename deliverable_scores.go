@@ -34,24 +34,6 @@ func buildDeliverableScores(testResults []TestResult) []DeliverableScore {
 	return deliverableScores
 }
 
-// func buildDeliverableScoresFromPytest(testResults PytestResults, deliverablesScores []DeliverableScore) []DeliverableScore {
-
-// 	for _, testResult := range testResults.Tests {
-// 		// for _, assertionResult := range testResult.AssertionResults {
-// 		for i := 0; i < len(deliverablesScores); i++ {
-// 			if testResult.Nodeid == "test_residential_controller.py::test_"+deliverablesScores[i].ScoreCardItemName {
-// 				if testResult.Outcome == "passed" {
-// 					deliverablesScores[i].Pass = true
-// 				}
-// 				break
-// 			}
-// 		}
-// 		// }
-
-// 	}
-// 	return deliverablesScores
-// }
-
 // func buildDeliverableScores(gradingRequest GradingRequest) []DeliverableScore {
 // 	var deliverableScores []DeliverableScore
 
