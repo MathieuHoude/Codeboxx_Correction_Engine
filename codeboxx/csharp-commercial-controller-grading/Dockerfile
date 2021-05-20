@@ -1,4 +1,4 @@
-FROM codeboxx/CSharp-commercial-controller-grading:latest
+FROM codeboxx/csharp-commercial-controller-grading:latest
 ARG ssh_prv_key
 ARG ssh_pub_key
 # Add the keys and set permissions
