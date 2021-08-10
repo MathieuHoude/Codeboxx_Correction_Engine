@@ -24,6 +24,7 @@ func handleRequests() {
 	myRouter.HandleFunc("/gradingrequest", newGradingRequest).Methods("POST")
 	myRouter.HandleFunc("/checkGithubAccess", checkGithubAccessRequest).Methods("GET")
 	myRouter.HandleFunc("/checkIfGithubUserExists", checkIfGithubUserExistsRequest).Methods("GET")
+	myRouter.HandleFunc("/checkIfRepoIsPrivate", checkIfRepoIsPrivateRequest).Methods("GET")
 
 	log.Println("Starting server on :10000...")
 	log.Fatal(http.ListenAndServe("0.0.0.0:10000", myRouter))
@@ -68,6 +69,32 @@ func checkGithubAccessRequest(w http.ResponseWriter, r *http.Request) {
 		response := struct {
 			HasGivenAccess bool `json:"hasGivenAccess"`
 		}{hasGivenAccess}
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func checkIfRepoIsPrivateRequest(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint Hit: checkIfRepoIsPrivate")
+	params, ok := r.URL.Query()["repositoryURL"]
+	if !ok || len(params[0]) < 1 {
+		log.Println("Url Param 'key' is missing")
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Param 'repositoryURL' is missing")
+		return
+	} else {
+
+		IDList := checkRepositoryInvitations()
+		if len(IDList) > 0 {
+			acceptRepositoryInvitations(IDList)
+		}
+		isPrivate := checkIfRepoIsPrivate(params[0])
+		response := struct {
+			IsPrivate bool `json:"isPrivate"`
+		}{isPrivate}
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -131,6 +158,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("sentry.Init: %s", err)
 	}
+
 	loadEnv()
 	startWorkers(5, 2) //Starts the workers that will receive tasks from the task_queue. Specify the number of workers needed.
 	handleRequests()   //Start the API to accept and dispatch new grading requests
