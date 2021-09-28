@@ -29,6 +29,7 @@ type GradingResponse struct {
 
 func sendBackResults(jobID uint, gradingResponse GradingResponse) {
 	jsonData, _ := json.Marshal(gradingResponse)
+	fmt.Println(string(jsonData))
 	request, _ := http.NewRequest("POST", os.Getenv("DELIVERABLESCORESUPDATEENDPOINT"), bytes.NewBuffer(jsonData))
 	request.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
