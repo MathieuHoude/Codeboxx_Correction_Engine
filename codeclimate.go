@@ -123,7 +123,7 @@ func codeClimate(githubSlug string, deliverableScores []DeliverableScore) CodeCl
 	getRepositoryResponse := getPrivateRepository(githubSlug)
 	codeClimateIssues := getPrivateRepositoryIssues(getRepositoryResponse)
 
-	if len(codeClimateIssues.Data) < 3 {
+	if len(codeClimateIssues.Data) < 10 {
 		for i := range deliverableScores {
 			if deliverableScores[i].ScoreCardItemName == "The program is well coded" {
 				deliverableScores[i].Pass = true
